@@ -4,6 +4,6 @@ Learning Management System built using MERN Stack.
 
 ## Team Members
 
-- Person A
-- Person B
-- Person C
+- Priyam
+- Ranit
+- Amit
