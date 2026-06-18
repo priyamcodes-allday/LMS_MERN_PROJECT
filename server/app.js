@@ -1,8 +1,8 @@
 require("dotenv").config()
 const express=require('express')
 const cors = require("cors");
-const dbCon=require('./auth/app/config/db')
-const authRoutes=require('./auth/app/routes/authroutes')
+const dbCon=require('./auth/config/db')
+const authRoutes=require('./auth/routes/authRoutes')
 
 const app=express()
 const port=5000
