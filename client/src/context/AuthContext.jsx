@@ -147,7 +147,7 @@ export function AuthProvider({ children }) {
 
 
 
-function useAuth(){
+export function useAuth(){
 
   const context = useContext(AuthContext);
 
@@ -160,5 +160,3 @@ function useAuth(){
   return context;
 
 }
-
-AuthProvider.useAuth = useAuth;
