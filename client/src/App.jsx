@@ -7,6 +7,8 @@ import Courses from "./components/Courses";
 import Experience from "./components/Experience";
 import Testimonials from "./components/Testimonials";
 import Articles from "./components/Articles";
+import AdmissionBanner from "./components/AdmissionBanner";
+import Footer from "./components/Footer";
 
 
 function App() {
@@ -24,6 +26,8 @@ function App() {
           <Experience />
           <Testimonials />
           <Articles/>
+          <AdmissionBanner/>
+          <Footer/>
         </main>
 
         <LoginModal />
