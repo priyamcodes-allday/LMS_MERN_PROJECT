@@ -5,6 +5,8 @@ import Sponsors from "./components/Sponsors";
 import Journey from "./components/Journey";
 import Courses from "./components/Courses";
 import Experience from "./components/Experience";
+import Testimonials from "./components/Testimonials";
+import Articles from "./components/Articles";
 
 
 function App() {
@@ -20,6 +22,8 @@ function App() {
           <Courses />
           <Journey />
           <Experience />
+          <Testimonials />
+          <Articles/>
         </main>
 
         <LoginModal />
