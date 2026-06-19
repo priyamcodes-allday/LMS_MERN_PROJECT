@@ -1,10 +1,12 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+
 const dbCon = require("./config/db");
-const authRoutes = require("./auth/app/routes/authroutes");
 const courseRoutes = require("./course/routes/courseRoutes"); // By Priyam
 const categoryRoutes = require("./course/routes/categoryRoutes"); // By Priyam
+
+const authRoutes = require("./auth/routes/authRoutes");
 
 const app = express();
 const port = 5000;
