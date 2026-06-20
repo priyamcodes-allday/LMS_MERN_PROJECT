@@ -139,13 +139,9 @@ class AuthController {
         return next(new ApiError(401, "Invalid email or password."));
       }
 
-      if (
-        !user.isEmailVerified &&
-        process.env.SKIP_EMAIL_VERIFICATION !== "true"
-      ) {
-        //testing perpous
+      if (!user.isEmailVerified) {
         return next(
-          new ApiError(401, "Please verify your email before logging in.")
+          new ApiError(401, "Please verify your email before logging in."),
         );
       }
 
@@ -158,7 +154,7 @@ class AuthController {
       // Teacher must be approved by admin before logging in
       if (user.role === "teacher" && !user.isApproved) {
         return next(
-          new ApiError(403, "Your teacher account is pending admin approval.")
+          new ApiError(403, "Your teacher account is pending admin approval."),
         );
       }
 
@@ -204,9 +200,8 @@ class AuthController {
     }
   }
 
-
   // REFRESH ACCESS TOKEN
- 
+
   async refreshToken(req, res, next) {
     try {
       const token = req.cookies.refreshToken;
@@ -221,7 +216,7 @@ class AuthController {
 
       if (!user || user.refreshToken !== token) {
         return next(
-          new ApiError(401, "Invalid refresh token. Please login again.")
+          new ApiError(401, "Invalid refresh token. Please login again."),
         );
       }
 
@@ -234,11 +229,9 @@ class AuthController {
         maxAge: 15 * 60 * 1000,
       });
 
-      res.status(200).json({
-        success: true,
-        message: "Access token refreshed.",
-        ...(process.env.NODE_ENV !== "production" && { accessToken: newAccessToken }),
-      });
+      res
+        .status(200)
+        .json({ success: true, message: "Access token refreshed." });
     } catch (error) {
       next(new ApiError(401, "Invalid or expired refresh token."));
     }
@@ -271,7 +264,7 @@ class AuthController {
 
       const user = await User.findOne({ email });
       if (!user) {
-        // We send success even if user not found 
+        // We send success even if user not found
         return res.status(200).json({
           success: true,
           message: "If this email exists, a reset link has been sent.",
@@ -304,7 +297,6 @@ class AuthController {
       next(error);
     }
   }
-
 
   // RESET PASSWORD
 

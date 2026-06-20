@@ -23,13 +23,14 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "student", "teacher", "admin"],
       default: "user",
     },
+
     isEmailVerified: {
       type: Boolean,
       default: false,
     },
     isApproved: {
       type: Boolean,
-      default: true, 
+      default: true,
     },
     avatar: {
       type: String,
@@ -42,7 +43,7 @@ const userSchema = new mongoose.Schema(
 
     refreshToken: String,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("User", userSchema);

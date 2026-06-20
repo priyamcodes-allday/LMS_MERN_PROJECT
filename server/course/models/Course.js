@@ -57,7 +57,7 @@ const courseSchema = new mongoose.Schema(
       required: true,
     },
 
-    instructor: {
+    teacher: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -79,6 +79,10 @@ const courseSchema = new mongoose.Schema(
       type: String,
       enum: ["draft", "pending", "approved", "rejected"],
       default: "draft",
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   {

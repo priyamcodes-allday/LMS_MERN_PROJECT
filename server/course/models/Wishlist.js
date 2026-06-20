@@ -6,13 +6,13 @@ const wishlistSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true,
     },
 
     courses: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Course",
+        required: true,
       },
     ],
   },
