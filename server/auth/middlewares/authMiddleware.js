@@ -5,7 +5,7 @@ const ApiError = require("../utils/apiError");
 const protect = async (req, res, next) => {
   try {
     let token = req.cookies.accessToken;
-
+    console.log("Cookies received:", req.cookies);
     if (!token && req.headers.authorization?.startsWith("Bearer")) {
       token = req.headers.authorization.split(" ")[1];
     }

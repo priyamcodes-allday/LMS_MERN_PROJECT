@@ -1,6 +1,5 @@
 const Joi = require("joi");
 
-// Password rules: min 8 chars, uppercase, lowercase, number, special char
 const passwordRule = Joi.string()
   .min(8)
   .pattern(new RegExp("(?=.*[a-z])"))
@@ -18,7 +17,26 @@ const registerSchema = Joi.object({
   name: Joi.string().min(2).max(50).required(),
   email: Joi.string().email().required(),
   password: passwordRule,
-  role: Joi.string().valid("user", "teacher").default("user"), // only user or teacher on self-register
+  role: Joi.string().valid("user", "teacher").default("user"),
+
+  // Teacher-only fields — optional here, but required IF role is "teacher"
+  qualification: Joi.string().when("role", {
+    is: "teacher",
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  specialization: Joi.string().when("role", {
+    is: "teacher",
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  experience: Joi.number().when("role", {
+    is: "teacher",
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  bio: Joi.string().max(500).optional(), // optional even for teachers
+  linkedIn: Joi.string().uri().optional(),
 });
 
 const loginSchema = Joi.object({
@@ -30,7 +48,6 @@ const resetPasswordSchema = Joi.object({
   password: passwordRule,
 });
 
-// Middleware function: validates req.body against a given schema
 const validate = (schema) => (req, res, next) => {
   const { error } = schema.validate(req.body, { abortEarly: false });
   if (error) {

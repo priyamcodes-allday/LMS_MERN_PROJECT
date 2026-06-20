@@ -4,7 +4,10 @@ const User = require("../models/userSchema");
 const TeacherProfile = require("../models/teacherProfileSchema");
 const ApiError = require("../utils/apiError");
 const sendEmail = require("../utils/sendEmail");
-const { generateAccessToken, generateRefreshToken } = require("../utils/genrateToken");
+const {
+  generateAccessToken,
+  generateRefreshToken,
+} = require("../utils/genrateToken");
 const {
   verifyEmailTemplate,
   resetPasswordTemplate,
@@ -13,13 +16,20 @@ const {
 const jwt = require("jsonwebtoken");
 
 class AuthController {
-  // ─────────────────────────────────────────────
   // REGISTER
-  // POST /api/auth/register
-  // ─────────────────────────────────────────────
   async register(req, res, next) {
     try {
-      const { name, email, password, role, qualification, specialization, experience, bio, linkedIn } = req.body;
+      const {
+        name,
+        email,
+        password,
+        role,
+        qualification,
+        specialization,
+        experience,
+        bio,
+        linkedIn,
+      } = req.body;
 
       // Check if user already exists
       const existingUser = await User.findOne({ email });
@@ -35,7 +45,10 @@ class AuthController {
 
       // Create email verification token using crypto
       const rawToken = crypto.randomBytes(32).toString("hex");
-      const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+      const hashedToken = crypto
+        .createHash("sha256")
+        .update(rawToken)
+        .digest("hex");
 
       const user = await User.create({
         name,
@@ -43,6 +56,7 @@ class AuthController {
         password: hashedPassword,
         role: role || "user",
         isApproved,
+        isEmailVerified: process.env.SKIP_EMAIL_VERIFICATION === "true", //  testing shortcut
         emailVerifyToken: hashedToken,
         emailVerifyExpire: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
       });
@@ -73,16 +87,15 @@ class AuthController {
           role === "teacher"
             ? "Registration successful! Your teacher application is under review. Please verify your email."
             : "Registration successful! Please verify your email.",
+        ...(process.env.NODE_ENV !== "production" && { verifyToken: rawToken }), // testing only
       });
     } catch (error) {
       next(error);
     }
   }
 
-  // ─────────────────────────────────────────────
   // VERIFY EMAIL
-  // GET /api/auth/verify-email/:token
-  // ─────────────────────────────────────────────
+
   async verifyEmail(req, res, next) {
     try {
       const hashedToken = crypto
@@ -104,16 +117,17 @@ class AuthController {
       user.emailVerifyExpire = undefined;
       await user.save();
 
-      res.status(200).json({ success: true, message: "Email verified successfully! You can now login." });
+      res.status(200).json({
+        success: true,
+        message: "Email verified successfully! You can now login.",
+      });
     } catch (error) {
       next(error);
     }
   }
 
-  // ─────────────────────────────────────────────
   // LOGIN
-  // POST /api/auth/login
-  // ─────────────────────────────────────────────
+
   async login(req, res, next) {
     try {
       const { email, password } = req.body;
@@ -125,8 +139,14 @@ class AuthController {
         return next(new ApiError(401, "Invalid email or password."));
       }
 
-      if (!user.isEmailVerified) {
-        return next(new ApiError(401, "Please verify your email before logging in."));
+      if (
+        !user.isEmailVerified &&
+        process.env.SKIP_EMAIL_VERIFICATION !== "true"
+      ) {
+        //testing perpous
+        return next(
+          new ApiError(401, "Please verify your email before logging in.")
+        );
       }
 
       // Compare entered password with hashed password
@@ -137,7 +157,9 @@ class AuthController {
 
       // Teacher must be approved by admin before logging in
       if (user.role === "teacher" && !user.isApproved) {
-        return next(new ApiError(403, "Your teacher account is pending admin approval."));
+        return next(
+          new ApiError(403, "Your teacher account is pending admin approval.")
+        );
       }
 
       // Generate tokens
@@ -162,7 +184,6 @@ class AuthController {
         sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
-
       res.status(200).json({
         success: true,
         message: "Logged in successfully.",
@@ -172,16 +193,20 @@ class AuthController {
           email: user.email,
           role: user.role,
         },
+        // Testing only — tokens are already in HTTP-only cookies, this just lets you see them in Postman
+        ...(process.env.NODE_ENV !== "production" && {
+          accessToken,
+          refreshToken,
+        }),
       });
     } catch (error) {
       next(error);
     }
   }
 
-  // ─────────────────────────────────────────────
+
   // REFRESH ACCESS TOKEN
-  // POST /api/auth/refresh-token
-  // ─────────────────────────────────────────────
+ 
   async refreshToken(req, res, next) {
     try {
       const token = req.cookies.refreshToken;
@@ -195,7 +220,9 @@ class AuthController {
       const user = await User.findById(decoded.id);
 
       if (!user || user.refreshToken !== token) {
-        return next(new ApiError(401, "Invalid refresh token. Please login again."));
+        return next(
+          new ApiError(401, "Invalid refresh token. Please login again.")
+        );
       }
 
       const newAccessToken = generateAccessToken(user._id, user.role);
@@ -207,16 +234,18 @@ class AuthController {
         maxAge: 15 * 60 * 1000,
       });
 
-      res.status(200).json({ success: true, message: "Access token refreshed." });
+      res.status(200).json({
+        success: true,
+        message: "Access token refreshed.",
+        ...(process.env.NODE_ENV !== "production" && { accessToken: newAccessToken }),
+      });
     } catch (error) {
       next(new ApiError(401, "Invalid or expired refresh token."));
     }
   }
 
-  // ─────────────────────────────────────────────
   // LOGOUT
-  // POST /api/auth/logout
-  // ─────────────────────────────────────────────
+
   async logout(req, res, next) {
     try {
       // Clear refresh token from DB
@@ -226,23 +255,23 @@ class AuthController {
       res.clearCookie("accessToken");
       res.clearCookie("refreshToken");
 
-      res.status(200).json({ success: true, message: "Logged out successfully." });
+      res
+        .status(200)
+        .json({ success: true, message: "Logged out successfully." });
     } catch (error) {
       next(error);
     }
   }
 
-  // ─────────────────────────────────────────────
   // FORGOT PASSWORD
-  // POST /api/auth/forgot-password
-  // ─────────────────────────────────────────────
+
   async forgotPassword(req, res, next) {
     try {
       const { email } = req.body;
 
       const user = await User.findOne({ email });
       if (!user) {
-        // We send success even if user not found (security best practice)
+        // We send success even if user not found 
         return res.status(200).json({
           success: true,
           message: "If this email exists, a reset link has been sent.",
@@ -251,7 +280,10 @@ class AuthController {
 
       // Generate reset token
       const rawToken = crypto.randomBytes(32).toString("hex");
-      const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+      const hashedToken = crypto
+        .createHash("sha256")
+        .update(rawToken)
+        .digest("hex");
 
       user.resetPasswordToken = hashedToken;
       user.resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
@@ -263,20 +295,19 @@ class AuthController {
         subject: "Password Reset Request - LMS Platform",
         html: resetPasswordTemplate(user.name, resetUrl),
       });
-
       res.status(200).json({
         success: true,
         message: "If this email exists, a reset link has been sent.",
+        ...(process.env.NODE_ENV !== "production" && { resetToken: rawToken }), // ← testing only
       });
     } catch (error) {
       next(error);
     }
   }
 
-  // ─────────────────────────────────────────────
+
   // RESET PASSWORD
-  // POST /api/auth/reset-password/:token
-  // ─────────────────────────────────────────────
+
   async resetPassword(req, res, next) {
     try {
       const hashedToken = crypto
@@ -298,7 +329,10 @@ class AuthController {
       user.resetPasswordExpire = undefined;
       await user.save();
 
-      res.status(200).json({ success: true, message: "Password reset successfully. Please login." });
+      res.status(200).json({
+        success: true,
+        message: "Password reset successfully. Please login.",
+      });
     } catch (error) {
       next(error);
     }
