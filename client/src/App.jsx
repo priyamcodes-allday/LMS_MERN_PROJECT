@@ -1,40 +1,24 @@
-import Navbar from "./components/Navbar";
-import Hero from "./components/Hero";
-import { LoginModal, SignUpModal } from "./components/AuthModals";
-import Sponsors from "./components/Sponsors";
-import Journey from "./components/Journey";
-import Courses from "./components/Courses";
-import Experience from "./components/Experience";
-import Testimonials from "./components/Testimonials";
-import Articles from "./components/Articles";
-import AdmissionBanner from "./components/AdmissionBanner";
-import Footer from "./components/Footer";
+import { Routes, Route } from "react-router-dom";
+import Landing from "./pages/Landing";
+import DashboardLayout from "./layouts/DashboardLayout";
+import Dashboard from "./pages/Dashboard";
 
-
-function App() {
+function App(){
   return (
     <>
-      <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900">
-        <header className="bg-[#0c3c2e] relative">
-          <Navbar />
-          <Hero />
-        </header>
-        <Sponsors />
-        <main className="flex-grow">
-          <Courses />
-          <Journey />
-          <Experience />
-          <Testimonials />
-          <Articles/>
-          <AdmissionBanner/>
-          <Footer/>
-        </main>
+    <Routes>
+      <Route path="/" element={<Landing/>}/>
 
-        <LoginModal />
-        <SignUpModal />
-      </div>
+      <Route path="/dashboard" element={<DashboardLayout/>}>
+
+      <Route index element={<Dashboard/>}/>
+      
+
+      </Route>
+      
+    </Routes>
     </>
-  );
+  )
 }
 
 export default App;
