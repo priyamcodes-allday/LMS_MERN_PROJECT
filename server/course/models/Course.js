@@ -1,36 +1,33 @@
 const mongoose = require("mongoose");
 
-const lessonSchema = new mongoose.Schema(
-  {
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
-    videoUrl: {
-      type: String,
-      default: "",
-    },
-
-    resources: [
-      {
-        type: String,
-      },
-    ],
-
-    duration: {
-      type: Number,
-      default: 0,
-    },
-
-    order: {
-      type: Number,
-      required: true,
-    },
+const lessonSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+    trim: true,
   },
-  { _id: false },
-);
+
+  videoUrl: {
+    type: String,
+    default: "",
+  },
+
+  resources: [
+    {
+      type: String,
+    },
+  ],
+
+  duration: {
+    type: Number,
+    default: 0,
+  },
+
+  order: {
+    type: Number,
+    required: true,
+  },
+});
 
 const courseSchema = new mongoose.Schema(
   {
@@ -64,11 +61,6 @@ const courseSchema = new mongoose.Schema(
     },
 
     thumbnail: {
-      type: String,
-      default: "",
-    },
-
-    previewVideo: {
       type: String,
       default: "",
     },

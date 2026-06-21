@@ -342,6 +342,177 @@ class CourseController {
       });
     }
   }
+
+  // Add Lesson
+  async addLesson(req, res) {
+    try {
+      const { courseId } = req.params;
+
+      const course = await Course.findOne({
+        _id: courseId,
+        isActive: true,
+      });
+
+      if (!course) {
+        return res.status(404).json({
+          success: false,
+          message: "Course not found",
+        });
+      }
+
+      const { title, videoUrl, resources, duration, order } = req.body;
+
+      const lessonExists = course.lessons.some(
+        (lesson) => lesson.order === order,
+      );
+
+      if (lessonExists) {
+        return res.status(400).json({
+          success: false,
+          message: "Lesson order already exists",
+        });
+      }
+
+      course.lessons.push({
+        title,
+        videoUrl,
+        resources,
+        duration,
+        order,
+      });
+
+      await course.save();
+
+      res.status(201).json({
+        success: true,
+        message: "Lesson added successfully",
+        data: course,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
+  // Get All Lessons
+  async getCourseLessons(req, res) {
+    try {
+      const { courseId } = req.params;
+
+      const course = await Course.findOne({
+        _id: courseId,
+        isActive: true,
+      }).select("title lessons");
+
+      if (!course) {
+        return res.status(404).json({
+          success: false,
+          message: "Course not found",
+        });
+      }
+
+      const lessons = [...course.lessons].sort((a, b) => a.order - b.order);
+
+      res.status(200).json({
+        success: true,
+        course: course.title,
+        count: lessons.length,
+        data: lessons,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
+  // Update lesson
+  async updateLesson(req, res) {
+    try {
+      const { courseId, lessonId } = req.params;
+
+      const course = await Course.findOne({
+        _id: courseId,
+        isActive: true,
+      });
+
+      if (!course) {
+        return res.status(404).json({
+          success: false,
+          message: "Course not found",
+        });
+      }
+
+      const lesson = course.lessons.id(lessonId);
+
+      if (!lesson) {
+        return res.status(404).json({
+          success: false,
+          message: "Lesson not found",
+        });
+      }
+
+      Object.assign(lesson, req.body);
+
+      await course.save();
+
+      res.status(200).json({
+        success: true,
+        message: "Lesson updated successfully",
+        data: lesson,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
+  // Delete lesson
+  async deleteLesson(req, res) {
+    try {
+      const { courseId, lessonId } = req.params;
+
+      const course = await Course.findOne({
+        _id: courseId,
+        isActive: true,
+      });
+
+      if (!course) {
+        return res.status(404).json({
+          success: false,
+          message: "Course not found",
+        });
+      }
+
+      const lesson = course.lessons.id(lessonId);
+
+      if (!lesson) {
+        return res.status(404).json({
+          success: false,
+          message: "Lesson not found",
+        });
+      }
+
+      lesson.deleteOne();
+
+      await course.save();
+
+      res.status(200).json({
+        success: true,
+        message: "Lesson deleted successfully",
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
 }
 
 module.exports = new CourseController();
