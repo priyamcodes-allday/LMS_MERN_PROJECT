@@ -9,5 +9,6 @@ router.use(protect);
 router.get("/profile", userController.getProfile);
 router.put("/updateprofile", userController.updateProfile);
 router.put("/change-password", userController.changePassword);
+router.post("/apply-teacher", userController.applyForTeacher);
 
 module.exports = router;

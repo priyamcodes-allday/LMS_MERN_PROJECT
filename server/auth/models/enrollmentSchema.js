@@ -24,5 +24,5 @@ const enrollmentSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-module.exports = mongoose.model("Enrollment", enrollmentSchema);
+module.exports = mongoose.model("AuthEnrollment", enrollmentSchema);
  

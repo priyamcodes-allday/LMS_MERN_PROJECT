@@ -2,16 +2,15 @@ require("dotenv").config();
 const express = require("express");
 const cookieParser = require("cookie-parser"); //By ranit
 const cors = require("cors");
-
 const dbCon = require("./config/db");
 const courseRoutes = require("./course/routes/courseRoutes"); // By Priyam
 const categoryRoutes = require("./course/routes/categoryRoutes"); // By Priyam
 const enrollmentRoutes = require("./course/routes/enrollmentRoutes"); // By Priyam
 const cartRoutes = require("./course/routes/cartRoutes"); // By Priyam
 const wishlistRoutes = require("./course/routes/wishlistRoutes"); // By Priyam
-
-const authRoutes = require("./auth/routes/authRoutes");
+const authRoutes = require("./auth/routes/authRoutes");//by ranit
 const userRoutes = require("./auth/routes/userRoutes"); //By ranit
+const adminRoutes=require('./auth/routes/adminRoutes')
 
 const app = express();
 const port = 5000;
@@ -25,6 +24,7 @@ app.use(express.json());
 dbCon();
 app.use("/api", authRoutes); //By ranit
 app.use("/api/user", userRoutes); //By ranit
+app.use('/api/admin',adminRoutes)//By ranit
 app.use("/api/v1/courses", courseRoutes); // By Priyam
 app.use("/api/v1/categories", categoryRoutes); // By Priyam
 app.use("/api/v1/enrollments", enrollmentRoutes); // By Priyam
