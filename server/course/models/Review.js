@@ -21,15 +21,16 @@ const reviewSchema = new mongoose.Schema(
       max: 5,
     },
 
-    comment: {
+    review: {
       type: String,
       trim: true,
-      default: "",
     },
   },
   {
     timestamps: true,
   },
 );
+
+reviewSchema.index({ student: 1, course: 1 }, { unique: true });
 
 module.exports = mongoose.model("Review", reviewSchema);

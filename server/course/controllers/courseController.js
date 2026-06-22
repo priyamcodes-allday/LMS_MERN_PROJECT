@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Course = require("../models/Course");
 const Category = require("../models/Category");
 const User = require("../../auth/models/userSchema");
+const cloudinary = require("../../config/cloudinary");
 
 class CourseController {
   // Create Course
@@ -282,6 +283,13 @@ class CourseController {
     try {
       const { keyword } = req.query;
 
+      if (!keyword) {
+        return res.status(400).json({
+          success: false,
+          message: "Keyword is required",
+        });
+      }
+
       const courses = await Course.find({
         isActive: true,
         title: {
@@ -505,6 +513,53 @@ class CourseController {
       res.status(200).json({
         success: true,
         message: "Lesson deleted successfully",
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
+  //Thumbnail Upload
+  async uploadThumbnail(req, res) {
+    try {
+      const { courseId } = req.params;
+
+      const course = await Course.findById(courseId);
+
+      if (!course) {
+        return res.status(404).json({
+          success: false,
+          message: "Course not found",
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "Please upload an image",
+        });
+      }
+
+      if (course.thumbnailPublicId) {
+        await cloudinary.uploader.destroy(course.thumbnailPublicId);
+      }
+
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "lms/courses",
+      });
+
+      course.thumbnail = result.secure_url;
+      course.thumbnailPublicId = result.public_id;
+
+      await course.save();
+
+      res.status(200).json({
+        success: true,
+        message: "Thumbnail uploaded successfully",
+        thumbnail: course.thumbnail,
       });
     } catch (error) {
       res.status(500).json({

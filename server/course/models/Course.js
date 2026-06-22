@@ -65,6 +65,11 @@ const courseSchema = new mongoose.Schema(
       default: "",
     },
 
+    thumbnailPublicId: {
+      type: String,
+      default: "",
+    },
+
     lessons: [lessonSchema],
 
     status: {
