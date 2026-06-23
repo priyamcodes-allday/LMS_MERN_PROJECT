@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/userSchema");
-const Course = require("../models/courseSchema");
+const Course = require("../../course/models/Course");
 const TeacherProfile = require("../models/teacherProfileSchema");
 const Enrollment = require("../models/enrollmentSchema");
 const ApiError = require("../utils/apiError");
@@ -13,16 +13,26 @@ const {
 
 class AdminController {
   // ─── DASHBOARD ──────────────────────────────
+  // GET /api/admin/dashboard
   async getDashboard(req, res, next) {
     try {
       const totalUsers = await User.countDocuments({ role: "user" });
       const totalStudents = await User.countDocuments({ role: "student" });
       const totalTeachers = await User.countDocuments({ role: "teacher" });
       const totalCourses = await Course.countDocuments();
+
       const pendingTeachers = await TeacherProfile.countDocuments({
         status: "pending",
       });
+
+      // Course statuses now include "draft" in addition to pending/approved/rejected
+      const draftCourses = await Course.countDocuments({ status: "draft" });
       const pendingCourses = await Course.countDocuments({ status: "pending" });
+      const approvedCourses = await Course.countDocuments({ status: "approved" });
+      const rejectedCourses = await Course.countDocuments({ status: "rejected" });
+
+      // Track inactive (soft-disabled) courses separately from rejected ones
+      const inactiveCourses = await Course.countDocuments({ isActive: false });
 
       res.status(200).json({
         success: true,
@@ -32,7 +42,11 @@ class AdminController {
           totalTeachers,
           totalCourses,
           pendingTeachers,
+          draftCourses,
           pendingCourses,
+          approvedCourses,
+          rejectedCourses,
+          inactiveCourses,
         },
       });
     } catch (error) {
@@ -41,6 +55,7 @@ class AdminController {
   }
 
   // ─── USER MANAGEMENT ────────────────────────
+  // GET /api/admin/users
   async getAllUsers(req, res, next) {
     try {
       const users = await User.find().select("-password -refreshToken");
@@ -93,7 +108,7 @@ class AdminController {
       const user = await User.findByIdAndUpdate(
         req.params.id,
         { role },
-        { new: true }
+        { returnDocument: "after" }
       ).select("-password");
       if (!user) return next(new ApiError(404, "User not found."));
       res.status(200).json({ success: true, message: "Role updated.", user });
@@ -103,6 +118,7 @@ class AdminController {
   }
 
   // ─── TEACHER APPROVAL ───────────────────────
+  // GET /api/admin/teachers/pending
   async getPendingTeachers(req, res, next) {
     try {
       const profiles = await TeacherProfile.aggregate([
@@ -145,7 +161,7 @@ class AdminController {
       const updatedProfile = await TeacherProfile.findByIdAndUpdate(
         req.params.id,
         { status: "approved" },
-        { new: true }
+        { returnDocument: "after" }
       );
 
       if (!updatedProfile)
@@ -189,14 +205,31 @@ class AdminController {
     try {
       const { reason } = req.body;
 
-      const profile = await TeacherProfile.findByIdAndUpdate(
+      // Switched from populate() to aggregate() to stay consistent with the
+      // rest of the controller, which avoids .populate() in favor of pipelines
+      const updatedProfile = await TeacherProfile.findByIdAndUpdate(
         req.params.id,
         { status: "rejected", rejectionReason: reason },
-        { new: true }
-      ).populate("user");
+        { returnDocument: "after" }
+      );
 
-      if (!profile)
+      if (!updatedProfile)
         return next(new ApiError(404, "Teacher profile not found."));
+
+      const result = await TeacherProfile.aggregate([
+        { $match: { _id: updatedProfile._id } },
+        {
+          $lookup: {
+            from: "users",
+            localField: "user",
+            foreignField: "_id",
+            as: "user",
+          },
+        },
+        { $unwind: "$user" },
+      ]);
+
+      const profile = result[0];
 
       await sendEmail({
         to: profile.user.email,
@@ -213,9 +246,24 @@ class AdminController {
   }
 
   // ─── COURSE MANAGEMENT ──────────────────────
+  // GET /api/admin/courses
+  // Supports optional ?status=pending|approved|rejected|draft query filter
   async getAllCourses(req, res, next) {
     try {
-      const courses = await Course.aggregate([
+      const { status } = req.query;
+
+      const matchStage = {};
+      if (status) {
+        matchStage.status = status;
+      }
+
+      const pipeline = [];
+
+      if (Object.keys(matchStage).length > 0) {
+        pipeline.push({ $match: matchStage });
+      }
+
+      pipeline.push(
         {
           $lookup: {
             from: "users",
@@ -226,14 +274,78 @@ class AdminController {
         },
         { $unwind: "$teacher" },
         {
+          // category is now a reference (Category model), so it needs its own lookup
+          // preserveNullAndEmptyArrays guards against older/incomplete course docs
+          $lookup: {
+            from: "categories",
+            localField: "category",
+            foreignField: "_id",
+            as: "category",
+          },
+        },
+        { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+        {
           $project: {
             title: 1,
             description: 1,
             price: 1,
             thumbnail: 1,
             status: 1,
+            isActive: 1,
             category: 1,
-            level: 1,
+            enrolledStudents: 1,
+            // Only send lesson count to the admin list view, not full lesson content —
+            // keeps the payload light since lessons can contain video URLs/resources
+            lessonCount: { $size: { $ifNull: ["$lessons", []] } },
+            createdAt: 1,
+            "teacher._id": 1,
+            "teacher.name": 1,
+            "teacher.email": 1,
+          },
+        }
+      );
+
+      const courses = await Course.aggregate(pipeline);
+
+      res.status(200).json({ success: true, count: courses.length, courses });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // GET /api/admin/courses/:id  (full detail view, including lessons)
+  async getCourseById(req, res, next) {
+    try {
+      const result = await Course.aggregate([
+        { $match: { _id: new (require("mongoose").Types.ObjectId)(req.params.id) } },
+        {
+          $lookup: {
+            from: "users",
+            localField: "teacher",
+            foreignField: "_id",
+            as: "teacher",
+          },
+        },
+        { $unwind: "$teacher" },
+        {
+          $lookup: {
+            from: "categories",
+            localField: "category",
+            foreignField: "_id",
+            as: "category",
+          },
+        },
+        { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            title: 1,
+            description: 1,
+            price: 1,
+            thumbnail: 1,
+            status: 1,
+            isActive: 1,
+            category: 1,
+            lessons: 1,
             enrolledStudents: 1,
             createdAt: 1,
             "teacher._id": 1,
@@ -243,7 +355,10 @@ class AdminController {
         },
       ]);
 
-      res.status(200).json({ success: true, count: courses.length, courses });
+      const course = result[0];
+      if (!course) return next(new ApiError(404, "Course not found."));
+
+      res.status(200).json({ success: true, course });
     } catch (error) {
       next(error);
     }
@@ -255,7 +370,7 @@ class AdminController {
       const updatedCourse = await Course.findByIdAndUpdate(
         req.params.id,
         { status: "approved" },
-        { new: true }
+        { returnDocument: "after" }
       );
 
       if (!updatedCourse) return next(new ApiError(404, "Course not found."));
@@ -295,7 +410,7 @@ class AdminController {
       const course = await Course.findByIdAndUpdate(
         req.params.id,
         { status: "rejected" },
-        { new: true }
+        { returnDocument: "after" }
       );
       if (!course) return next(new ApiError(404, "Course not found."));
       res.status(200).json({ success: true, message: "Course rejected." });
@@ -304,11 +419,38 @@ class AdminController {
     }
   }
 
+  // PUT /api/admin/courses/:id/toggle-active
+  // Soft-disable/enable a course instead of permanently deleting it.
+  // Use this for "hide this course from students" without losing data.
+  async toggleCourseActive(req, res, next) {
+    try {
+      const course = await Course.findById(req.params.id);
+      if (!course) return next(new ApiError(404, "Course not found."));
+
+      course.isActive = !course.isActive;
+      await course.save();
+
+      res.status(200).json({
+        success: true,
+        message: `Course ${course.isActive ? "activated" : "deactivated"}.`,
+        course,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // DELETE /api/admin/courses/:id
+  // Permanent hard delete. Prefer toggleCourseActive for routine moderation;
+  // use this only when the course should be removed from the database entirely.
   async deleteCourse(req, res, next) {
     try {
       const course = await Course.findByIdAndDelete(req.params.id);
       if (!course) return next(new ApiError(404, "Course not found."));
+
+      // Clean up dangling enrollment records pointing at the deleted course
+      await Enrollment.deleteMany({ course: req.params.id });
+
       res.status(200).json({ success: true, message: "Course deleted." });
     } catch (error) {
       next(error);
@@ -316,6 +458,7 @@ class AdminController {
   }
 
   // ─── ASSIGN STUDENT TO TEACHER ──────────────
+  // POST /api/admin/assign
   async assignStudentToTeacher(req, res, next) {
     try {
       const { studentId, courseId } = req.body;

@@ -77,6 +77,12 @@ const courseSchema = new mongoose.Schema(
       enum: ["draft", "pending", "approved", "rejected"],
       default: "draft",
     },
+    enrolledStudents: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,

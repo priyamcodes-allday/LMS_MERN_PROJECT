@@ -12,7 +12,7 @@ const wishlistRoutes = require("./course/routes/wishlistRoutes"); // By Priyam
 const reviewRoutes = require("./course/routes/reviewRoutes"); // By Priyam
 const authRoutes = require("./auth/routes/authRoutes"); //by ranit
 const userRoutes = require("./auth/routes/userRoutes"); //By ranit
-const adminRoutes = require("./auth/routes/adminRoutes");
+const adminRoutes = require("./auth/routes/adminRoutes");//By ranit
 
 const app = express();
 const port = 5000;
