@@ -28,8 +28,12 @@ class AdminController {
       // Course statuses now include "draft" in addition to pending/approved/rejected
       const draftCourses = await Course.countDocuments({ status: "draft" });
       const pendingCourses = await Course.countDocuments({ status: "pending" });
-      const approvedCourses = await Course.countDocuments({ status: "approved" });
-      const rejectedCourses = await Course.countDocuments({ status: "rejected" });
+      const approvedCourses = await Course.countDocuments({
+        status: "approved",
+      });
+      const rejectedCourses = await Course.countDocuments({
+        status: "rejected",
+      });
 
       // Track inactive (soft-disabled) courses separately from rejected ones
       const inactiveCourses = await Course.countDocuments({ isActive: false });
@@ -108,7 +112,7 @@ class AdminController {
       const user = await User.findByIdAndUpdate(
         req.params.id,
         { role },
-        { returnDocument: "after" }
+        { returnDocument: "after" },
       ).select("-password");
       if (!user) return next(new ApiError(404, "User not found."));
       res.status(200).json({ success: true, message: "Role updated.", user });
@@ -161,7 +165,7 @@ class AdminController {
       const updatedProfile = await TeacherProfile.findByIdAndUpdate(
         req.params.id,
         { status: "approved" },
-        { returnDocument: "after" }
+        { returnDocument: "after" },
       );
 
       if (!updatedProfile)
@@ -210,7 +214,7 @@ class AdminController {
       const updatedProfile = await TeacherProfile.findByIdAndUpdate(
         req.params.id,
         { status: "rejected", rejectionReason: reason },
-        { returnDocument: "after" }
+        { returnDocument: "after" },
       );
 
       if (!updatedProfile)
@@ -302,7 +306,7 @@ class AdminController {
             "teacher.name": 1,
             "teacher.email": 1,
           },
-        }
+        },
       );
 
       const courses = await Course.aggregate(pipeline);
@@ -317,7 +321,11 @@ class AdminController {
   async getCourseById(req, res, next) {
     try {
       const result = await Course.aggregate([
-        { $match: { _id: new (require("mongoose").Types.ObjectId)(req.params.id) } },
+        {
+          $match: {
+            _id: new (require("mongoose").Types.ObjectId)(req.params.id),
+          },
+        },
         {
           $lookup: {
             from: "users",
@@ -370,7 +378,7 @@ class AdminController {
       const updatedCourse = await Course.findByIdAndUpdate(
         req.params.id,
         { status: "approved" },
-        { returnDocument: "after" }
+        { returnDocument: "after" },
       );
 
       if (!updatedCourse) return next(new ApiError(404, "Course not found."));
@@ -410,7 +418,7 @@ class AdminController {
       const course = await Course.findByIdAndUpdate(
         req.params.id,
         { status: "rejected" },
-        { returnDocument: "after" }
+        { returnDocument: "after" },
       );
       if (!course) return next(new ApiError(404, "Course not found."));
       res.status(200).json({ success: true, message: "Course rejected." });
@@ -478,7 +486,7 @@ class AdminController {
       });
       if (alreadyEnrolled) {
         return next(
-          new ApiError(400, "Student is already enrolled in this course.")
+          new ApiError(400, "Student is already enrolled in this course."),
         );
       }
 

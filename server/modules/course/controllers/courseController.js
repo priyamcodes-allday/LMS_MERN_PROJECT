@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const Course = require("../models/Course");
 const Category = require("../models/Category");
 const User = require("../../auth/models/userSchema");
-const cloudinary = require("../../config/cloudinary");
+const cloudinary = require("../../../config/cloudinary");
 
 class CourseController {
   // Create Course
