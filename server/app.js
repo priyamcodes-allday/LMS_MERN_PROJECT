@@ -13,6 +13,7 @@ const reviewRoutes = require("./course/routes/reviewRoutes"); // By Priyam
 const authRoutes = require("./auth/routes/authRoutes"); //by ranit
 const userRoutes = require("./auth/routes/userRoutes"); //By ranit
 const adminRoutes = require("./auth/routes/adminRoutes");//By ranit
+const teacherRoutes=require('./auth/routes/teacherRoutes')//by ranit
 
 const app = express();
 const port = 5000;
@@ -27,6 +28,7 @@ dbCon();
 app.use("/api", authRoutes); //By ranit
 app.use("/api/user", userRoutes); //By ranit
 app.use("/api/admin", adminRoutes); //By ranit
+app.use('/api/teacher',teacherRoutes)//by ranit
 app.use("/api/v1/courses", courseRoutes); // By Priyam
 app.use("/api/v1/categories", categoryRoutes); // By Priyam
 app.use("/api/v1/enrollments", enrollmentRoutes); // By Priyam
