@@ -16,6 +16,11 @@ export default function Dashboard() {
   const { user } = useAuth();
 
   const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [statsData, setStatsData] = useState({
+    totalEnrolled: 0,
+    totalSpent: 0,
+    totalTeachers: 0
+  })
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -24,13 +29,23 @@ export default function Dashboard() {
         if (!user?.id) return;
 
         setIsLoading(true);
-        const res = await api.get(`/student/my-courses`);
+        const [statsRes, coursesRes] = await Promise.all([
+          api.get(`/student/dashboard`),
+          api.get(`/student/my-courses`)
+        ])
 
-        setEnrolledCourses(res.data.courses || res.data.data || res.data || []);
+        if(statsRes.data?.success){
+          setStatsData(statsRes.data.stats);
+        }
+
+        if(coursesRes.data?.success){
+          setEnrolledCourses(coursesRes.data.enrollments || [])
+        }
+
       } catch (error) {
         console.log(
           "Error fetching dashboard data:",
-          error.response?.data || error.message,
+          error
         );
       } finally {
         setIsLoading(false);
@@ -39,43 +54,39 @@ export default function Dashboard() {
     fetchDashboardData();
   }, [user]);
 
-  const totalEnrolled = enrolledCourses.length;
-
-  const totalCompleted = 0;
-  const inProgress = totalEnrolled - totalCompleted;
 
   const stats = [
     {
       title: "Enrolled Courses",
-      value: totalEnrolled.toString(),
+      value: statsData.totalEnrolled.toString(),
       change: "Lifetime total",
       icon: BookOpen,
-      iconBg: "bg-indigo-100",
-      iconColor: "text-indigo-600",
+      iconBg: "bg-[#0c3c2e]/10",
+      iconColor: "text-[#0c3c2e]",
     },
     {
-      title: "Completed",
-      value: totalCompleted.toString(),
-      change: "Certificates earned",
+      title: "Total Spent",
+      value: `$${statsData.totalSpent.toString()}`,
+      change: "Investment in learning",
       icon: CheckCircle,
-      iconBg: "bg-emerald-100",
-      iconColor: "text-emerald-600",
+      iconBg: "bg-[#0c3c2e]/10",
+      iconColor: "text-[#0c3c2e]",
+    },
+    {
+      title: "Instructors",
+      value: statsData.totalTeachers.toString(),
+      change: "Different teachers",
+      icon: UsersIcon,
+      iconBg: "bg-[#0c3c2e]/10",
+      iconColor: "text-[#0c3c2e]",
     },
     {
       title: "In Progress",
-      value: inProgress.toString(),
+      value: statsData.totalEnrolled.toString(),
       change: "Currently learning",
       icon: Clock,
-      iconBg: "bg-amber-100",
-      iconColor: "text-amber-600",
-    },
-    {
-      title: "Certificates",
-      value: totalCompleted.toString(),
-      change: "Downloadable",
-      icon: Trophy,
-      iconBg: "bg-purple-100",
-      iconColor: "text-purple-600",
+      iconBg: "bg-[#0c3c2e]/10",
+      iconColor: "text-[#0c3c2e]",
     },
   ];
 

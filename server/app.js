@@ -20,6 +20,7 @@ const port = 5000;
 app.use(
   cors({
     origin: "http://localhost:5173",
+    credentials: true
   }),
 );
 app.use(cookieParser()); //By ranit
@@ -38,7 +39,12 @@ dbCon();
 // app.use("/api/v1/reviews", reviewRoutes); // By Priyam
 
 const router = require("../server/modules/MainRoute");
+const { errorHandler } = require("./modules/auth/middlewares/errorMiddleware");
+
 app.use(router);
+
+// Global Error Handler must be the last middleware
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`app is running on ${port}`);

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 
 export default function Navbar() {
   const { user, logout, openLogin, openSignUp } = useAuth();
@@ -31,6 +32,9 @@ export default function Navbar() {
           <a href="#testimonials" className="hover:text-white transition-colors">
             TESTIMONIALS
           </a>
+          <Link to="/become-instructor" className="text-[#dce739] hover:text-white transition-colors">
+            TEACH WITH US
+          </Link>
         </div>
         {/* 3. Desktop Action Buttons */}
         <div className="hidden md:flex items-center space-x-4">
@@ -125,6 +129,13 @@ export default function Navbar() {
             >
               FAQ
             </a>
+            <Link
+              to="/become-instructor"
+              onClick={() => setIsMobileOpen(false)}
+              className="text-[#dce739] hover:text-white font-semibold"
+            >
+              TEACH WITH US
+            </Link>
             <hr className="border-white/10" />
 
             {user ? (

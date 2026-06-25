@@ -27,13 +27,15 @@ export default function AdminDashboard() {
           api.get("/admin/courses"),
         ]);
 
-        setDashboardStats(statsRes.data);
+        if(statsRes.data?.success){
+          setDashboardStats(statsRes.data.stats);
+        }
 
         const allCourses =
           coursesRes.data.courses || coursesRes.data.data || [];
 
         const pending = allCourses.filter(
-          (c) => c.status === "pending" || c.isActive === false,
+          (c) => c.status === "pending"
         );
         setPendingCourses(pending);
       } catch (error) {
@@ -50,6 +52,10 @@ export default function AdminDashboard() {
     try {
       await api.put(`/admin/courses/${courseId}/approve`);
       setPendingCourses((prev) => prev.filter((c) => c._id !== courseId));
+      const statsRes = await api.get("/admin/dashboard")
+      if(statsRes.data?.success){
+        setDashboardStats(statsRes.data.stats);
+      }
     } catch (error) {
       console.error("Failed to approve", error);
       alert("Failed to approve course.");
@@ -61,6 +67,10 @@ export default function AdminDashboard() {
       await api.put(`/admin/courses/${courseId}/reject`);
 
       setPendingCourses((prev) => prev.filter((c) => c._id !== courseId));
+      const statsRes = await api.get("/admin/dashboard")
+      if(statsRes.data?.success){
+        setDashboardStats(statsRes.data.stats);
+      }
     } catch (error) {
       console.error("Failed to reject", error);
       alert("Failed to reject course");
@@ -70,37 +80,35 @@ export default function AdminDashboard() {
   const stats = [
     {
       title: "Total Users",
-      value: dashboardStats?.totalUsers?.toString() || "—",
-      change: "Registered on platform",
+      value: dashboardStats?.totalUsers?.toString() || "0",
+      change: `Students: ${dashboardStats?.totalStudents || 0} | Teachers: ${dashboardStats?.totalTeachers || 0}`,
       icon: Users,
       color: "text-blue-600",
-      bg: "bg-blue-100",
+      bg: "bg-blue-50",
     },
     {
       title: "Pending Approvals",
       value: pendingCourses.length.toString(),
-      change: "Requires attention",
+      change: "Courses awaiting review",
       icon: AlertCircle,
       color: "text-red-600",
-      bg: "bg-red-100",
+      bg: "bg-red-50",
     },
     {
-      title: "Platform Revenue",
-      value: dashboardStats?.totalRevenue
-        ? `$${dashboardStats.totalRevenue}`
-        : "—",
-      change: "Total earnings",
-      icon: DollarSign,
-      color: "text-emerald-600",
-      bg: "bg-emerald-100",
+      title: "Teacher Applications",
+      value: dashboardStats?.pendingTeachers?.toString() || "0",
+      change: "Teachers awaiting review",
+      icon: Users,
+      color: "text-[#0c3c2e]",
+      bg: "bg-[#0c3c2e]/10",
     },
     {
       title: "Total Courses",
-      value: dashboardStats?.totalCourses?.toString() || "—",
-      change: "Active on platform",
+      value: dashboardStats?.totalCourses?.toString() || "0",
+      change: `Approved: ${dashboardStats?.approvedCourses || 0} | Drafts: ${dashboardStats?.draftCourses || 0}`,
       icon: Video,
       color: "text-purple-600",
-      bg: "bg-purple-100",
+      bg: "bg-purple-50",
     },
   ];
 
@@ -188,7 +196,7 @@ export default function AdminDashboard() {
                       </h4>
                       <p className="text-sm text-gray-500">
                         By {course.teacher?.name || "Unknown Teacher"} •{" "}
-                        {course.lessons?.length || 0} Lessons
+                        {course.lessonCount || 0} Lessons
                       </p>
                     </div>
                   </div>

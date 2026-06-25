@@ -21,7 +21,7 @@ router.put("/courses/:id", teacherDashboardController.updateCourse);
 router.put("/courses/:id/submit", teacherDashboardController.submitForApproval);
 router.delete("/courses/:id", teacherDashboardController.deleteCourse);
 
-router.post("/courses/:id/lessons", teacherDashboardController.addLesson);
+router.post("/courses/:id/lessons", upload.single("video"), teacherDashboardController.addLesson);
 router.get("/courses/:id/lessons", teacherDashboardController.getCourseLessons);
 router.put(
   "/courses/:id/lessons/:lessonId",

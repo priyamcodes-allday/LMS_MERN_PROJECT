@@ -13,23 +13,25 @@ export function AuthProvider({ children }) {
   // REGISTER API
   const signup = async (name, email, password) => {
     try {
-      const res = await api.post("/register", {
+      const res = await api.post("/auth/register", {
         name,
         email,
         password,
+        role: "user"
       });
 
       console.log(res.data);
+      setIsSignUpOpen(false)
 
-      setUser({
-        name,
-        email,
-      });
+      alert("Account created! Please check your email to verify, then log in.")
+      setIsLoginOpen(true)
 
-      setIsSignUpOpen(false);
     } catch (error) {
       console.log(error.response?.data);
-      alert("Signup failed");
+      const errData = error.response?.data;
+
+      const errorMsg = errData?.message || (errData?.errors?.join("\n")) || "Please try again";
+      alert("Signup failed:\n" + errorMsg)
     }
   };
 

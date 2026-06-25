@@ -347,7 +347,16 @@ class TeacherDashboardController {
 
       if (!course) return next(new ApiError(404, "Course not found."));
 
-      const { title, videoUrl, resources, duration, order } = req.body;
+      const { title, resources, duration, order } = req.body;
+
+      let videoUrl = "";
+      if(req.file){
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: "lms/videos",
+          resource_type: "video",
+        })
+        videoUrl = result.secure_url;
+      }
 
       const orderToUse = order ?? course.lessons.length + 1;
 

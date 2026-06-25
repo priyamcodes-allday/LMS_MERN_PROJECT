@@ -10,11 +10,23 @@ import {
 import { useEffect, useState } from "react";
 import api from "../axios/api";
 import { useAuth } from "../context/AuthContext";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const [myCourses, setMyCourses] = useState([]);
+  const [statsData, setStatsData] = useState({
+    totalCourses: 0,
+    draftCourses: 0,
+    pendingCourses: 0,
+    approvedCourses: 0,
+    rejectedCourses: 0,
+    inactiveCourses: 0,
+    totalEnrollments: 0
+  })
   const [isLoading, setIsLoading] = useState(true);
+
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchTeacherData = async () => {
@@ -22,8 +34,23 @@ export default function TeacherDashboard() {
         if (!user?.id) return;
         setIsLoading(true);
 
-        const res = await api.get("/teacher/courses");
-        setMyCourses(res.data.courses || res.data.data || res.data || []);
+        const [coursesRes, statsRes] = await Promise.all([
+          api.get('/teacher/courses'),
+          api.get('/teacher/dashboard')
+        ])
+
+
+        if(coursesRes.data?.success){
+          setMyCourses(coursesRes.data.courses || []);
+
+        }
+
+        if(statsRes.data?.success){
+          setStatsData(statsRes.data.stats);
+
+        }
+
+       
       } catch (error) {
         console.error(
           "Failed to fetch teacher data:",
@@ -39,34 +66,35 @@ export default function TeacherDashboard() {
   const stats = [
     {
       title: "Total Students",
-      value: "—",
+      value: statsData.totalEnrollments.toString(),
       change: "Across all courses",
       icon: Users,
-      color: "text-blue-600",
-      bg: "bg-blue-100",
+      color: "text-[#0c3c2e]",
+      bg: "bg-[#0c3c2e]/10",
     },
     {
-      title: "Active Courses",
-      value: myCourses.length.toString(),
-      change: "Published on platform",
+      title: "Total Courses",
+      value: statsData.totalCourses.toString(),
+      change: `Approved: ${statsData.approvedCourses} | Pending: ${statsData.pendingCourses}`,
       icon: BookOpen,
       color: "text-emerald-600",
-      bg: "bg-emerald-100",
+      bg: "bg-emerald-50",
     },
     {
-      title: "Total Earnings",
-      value: "—",
-      change: "From course sales",
-      icon: DollarSign,
+      title: "Drafts / Rejected",
+      value: (statsData.draftCourses + statsData.rejectedCourses).toString(),
+      change: `Drafts: ${statsData.draftCourses} | Rejected: ${statsData.rejectedCourses}`,
+      icon: Clock,
       color: "text-amber-600",
-      bg: "bg-amber-100",
+      bg: "bg-amber-50",
     },
   ];
+
 
   return (
     <>
       <div className="space-y-8">
-        {/* Header with Upload Button */}
+        {/* Header*/}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
@@ -76,10 +104,14 @@ export default function TeacherDashboard() {
               Manage your courses, students, and content.
             </p>
           </div>
-          <button className="flex items-center gap-2 bg-[#0c3c2e] hover:bg-[#0c3c2e]/90 text-white px-5 py-2.5 rounded-lg font-semibold transition-colors shadow-sm">
-            <UploadCloud className="w-5 h-5" />
-            Upload New Video
-          </button>
+                 <Link 
+         to="/teacher/create-course"
+         className="flex items-center gap-2 bg-[#0c3c2e] hover:bg-[#0c3c2e]/90 text-white px-5 py-2.5 rounded-lg font-semibold transition-colors shadow-sm"
+       >
+         <UploadCloud className="w-5 h-5" />
+         Upload New Video
+       </Link>
+
         </div>
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -118,14 +150,14 @@ export default function TeacherDashboard() {
             <h2 className="text-lg font-bold text-gray-900">My Courses</h2>
             <a
               href="#"
-              className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+              className="text-sm font-semibold text-[#0c3c2e] hover:text-[#0c3c2e]/80"
             >
               View All
             </a>
           </div>
           {isLoading ? (
             <div className="flex justify-center items-center h-40">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0c3c2e]"></div>
             </div>
           ) : myCourses.length === 0 ? (
             <div className="p-8 text-center">
@@ -142,7 +174,8 @@ export default function TeacherDashboard() {
               {myCourses.map((course, idx) => (
                 <div
                   key={idx}
-                  className="p-6 hover:bg-gray-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  onClick={() => navigate(`/teacher/course/${course._id}`)}
+                  className="p-6 hover:bg-gray-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer"
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 text-gray-400">
@@ -153,7 +186,7 @@ export default function TeacherDashboard() {
                         {course.title}
                       </h4>
                       <p className="text-sm text-gray-500">
-                        {course.lessons?.length || 0} Lessons •{" "}
+                        {course.lessonCount || 0} Lessons •{" "}
                         {course.category?.name || "Uncategorized"}
                       </p>
                     </div>
@@ -162,10 +195,21 @@ export default function TeacherDashboard() {
                     <div className="text-sm text-gray-500">
                       <strong>${course.price || 0}</strong>
                     </div>
-
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600">
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      Active
+                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                      course.status === 'approved' 
+                        ? 'bg-emerald-50 text-emerald-600' 
+                        : course.status === 'pending'
+                        ? 'bg-amber-50 text-amber-600'
+                        : course.status === 'rejected'
+                        ? 'bg-red-50 text-red-600'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {course.status === 'approved' ? (
+                        <CheckCircle className="w-3.5 h-3.5" />
+                      ) : (
+                        <Clock className="w-3.5 h-3.5" />
+                      )}
+                      <span className="capitalize">{course.status || 'draft'}</span>
                     </div>
                   </div>
                 </div>

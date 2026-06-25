@@ -3,7 +3,7 @@ const verifyEmailTemplate = (name, verifyUrl) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
     <h2>Hello ${name}, verify your email</h2>
     <p>Click the button below to verify your email address.</p>
-    <a href="${verifyUrl}" style="background:#4F46E5;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">
+    <a href="${verifyUrl}" style="background:#4F46E5;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;" target="_blank">
       Verify Email
     </a>
     <p>This link expires in 24 hours.</p>
