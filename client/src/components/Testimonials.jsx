@@ -4,7 +4,7 @@ import reviewer from "../assets/faculty/teacher5.jpg";
 export default function Testimonials() {
   return (
     <>
-      <section className="bg-white py-20 px-6">
+      <section id="testimonials" className="bg-white py-20 px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
             <span className="text-xs font-bold text-[#0c3c2e] tracking-widest uppercase bg-[#0c3c2e]/10 px-3 py-1.5 rounded-lg inline-block mb-3">

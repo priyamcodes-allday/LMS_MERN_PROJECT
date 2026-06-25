@@ -29,22 +29,20 @@ import {
   X as XIcon,
   Menu as MenuIcon
 } from "lucide-react";
-import userImg from "../assets/faculty/teacher5.jpg";
+import TeacherImg from "../assets/faculty/teacher5.jpg";
 
-export default function DashboardLayout() {
+export default function AdminLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
 
   const navLinks = [
-    { name: "Dashboard", path: "/dashboard", icon: HomeIcon },
-    { name: "My Courses", path: "/dashboard/courses", icon: BookIcon },
-    { name: "Calendar", path: "/dashboard/calendar", icon: CalendarIcon },
-    { name: "Grades", path: "/dashboard/grades", icon: AwardIcon },
-    { name: "Messages", path: "/dashboard/messages", icon: MessageIcon },
-    { name: "People", path: "/dashboard/people", icon: UsersIcon },
-    { name: "Analytics", path: "/dashboard/analytics", icon: ChartIcon },
-    { name: "Settings", path: "/dashboard/settings", icon: SettingsIcon },
+    { name: "Overview", path: "/admin", icon: HomeIcon },
+    { name: "Video Approvals", path: "/admin/approvals", icon: AwardIcon },
+    { name: "User Management", path: "/admin/users", icon: UsersIcon },
+    { name: "Financials", path: "/admin/financials", icon: ChartIcon },
+    { name: "System Settings", path: "/admin/settings", icon: SettingsIcon },
   ];
+
 
   return (
     <>
@@ -149,12 +147,12 @@ export default function DashboardLayout() {
               <div className="flex items-center gap-3 cursor-pointer">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-bold text-gray-900 leading-none">
-                    Sarah Johnson
+                    Admin
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">Student</p>
+                  <p className="text-xs text-gray-500 mt-1">Administrator</p>
                 </div>
                 <img
-                  src={userImg}
+                  src={TeacherImg}
                   alt="User Profile"
                   className="w-9 h-9 rounded-full object-cover border border-gray-200"
                 />

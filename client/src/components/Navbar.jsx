@@ -28,8 +28,8 @@ export default function Navbar() {
           <a href="#mentors" className="hover:text-white transition-colors">
             MENTORS
           </a>
-          <a href="#faq" className="hover:text-white transition-colors">
-            FAQ
+          <a href="#testimonials" className="hover:text-white transition-colors">
+            TESTIMONIALS
           </a>
         </div>
         {/* 3. Desktop Action Buttons */}

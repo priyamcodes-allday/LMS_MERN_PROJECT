@@ -5,7 +5,7 @@ export default function Hero() {
   const { openSignUp, user } = useAuth();
 
   return (
-    <div className="bg-[#0c3c2e] text-white pt-6 pb-16 lg:pb-24 px-6 overflow-hidden relative">
+    <div id="home" className="bg-[#0c3c2e] text-white pt-6 pb-16 lg:pb-24 px-6 overflow-hidden relative">
       {/* Subtle background decorative shapes */}
       <div className="absolute top-1/4 left-5 w-24 h-24 bg-emerald-800 rounded-full blur-3xl opacity-30"></div>
       <div className="absolute bottom-10 right-5 w-40 h-40 bg-emerald-700 rounded-full blur-3xl opacity-20"></div>

@@ -1,9 +1,11 @@
 import { createContext, useContext, useState } from "react";
 import api from "../axios/api";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext(undefined);
 
 export function AuthProvider({ children }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
@@ -34,22 +36,31 @@ export function AuthProvider({ children }) {
   // LOGIN API
   const login = async (email, password) => {
     try {
-      const res = await api.post("/login", {
+      const res = await api.post("/auth/login", {
         email,
         password,
       });
 
-      console.log(res.data);
-
-      setUser({
+      const loggedInUser = {
+        id: res.data.user?.id,
         name: res.data.user?.name || "User",
         email,
-      });
+        role: res.data.user?.role || "user"
+      }
+
+      console.log(res.data);
+
+      setUser(loggedInUser);
 
       setIsLoginOpen(false);
+
+      const role = loggedInUser.role;
+      if(role === "admin") navigate("/admin");
+      else if (role === 'teacher') navigate("/teacher");
+      else navigate("/student");
     } catch (error) {
       console.log(error.response?.data);
-      alert("Invalid email or password");
+      alert('Invalid email or password: ' + error.response?.data?.message);
     }
   };
 

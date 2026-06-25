@@ -15,7 +15,7 @@ export default function Experience() {
 
   return (
     <>
-       <section className="bg-gray-50 py-20 px-6">
+       <section id="mentors" className="bg-gray-50 py-20 px-6">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
         
         {/* 1. Left Column (Mock Video Classroom Widget) */}
