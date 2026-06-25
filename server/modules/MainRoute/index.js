@@ -12,11 +12,13 @@ const authRoutes = require("../auth/routes/authRoutes"); //by ranit
 const userRoutes = require("../auth/routes/userRoutes"); //By ranit
 const adminRoutes = require("../auth/routes/adminRoutes"); //By ranit
 const teacherRoutes = require("../auth/routes/teacherRoutes"); //by ranit
+const studentRoutes=require('../auth/routes/studentRoutes')//by ranit
 
 router.use("/api/auth", authRoutes); //By ranit
 router.use("/api/user", userRoutes); //By ranit
 router.use("/api/admin", adminRoutes); //By ranit
 router.use("/api/teacher", teacherRoutes); //by ranit
+router.use('/api/student',studentRoutes)//by ranit
 router.use("/api/v1/courses", courseRoutes); // By Priyam
 router.use("/api/v1/categories", categoryRoutes); // By Priyam
 router.use("/api/v1/enrollments", enrollmentRoutes); // By Priyam
@@ -24,5 +26,6 @@ router.use("/api/v1/cart", cartRoutes); // By Priyam
 router.use("/api/v1/wishlist", wishlistRoutes); // By Priyam
 router.use("/api/v1/progress", progressRoutes); // By Priyam
 router.use("/api/v1/reviews", reviewRoutes); // By Priyam
+
 
 module.exports = router;
