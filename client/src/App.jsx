@@ -1,7 +1,8 @@
 import { Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
-import DashboardLayout from "./layouts/DashboardLayout";
+
 import Dashboard from "./pages/Dashboard";
+import DashboardLayout from "./layouts/DashboardLayout";
 import RoleRoute from "./components/routing/RoleRoute";
 import TeacherLayout from "./layouts/TeacherLayout"
 import TeacherDashboard from "./pages/TeacherDashboard";
@@ -11,20 +12,23 @@ import VerifyEmail from "./pages/VerifyEmail";
 import CreateCourse from "./pages/CreateCourse";
 import TeacherSignup from "./pages/TeacherSignup";
 import ManageCourse from "./pages/ManageCourse";
+import CourseCatalog from "./pages/CourseCatalog";
+import TeacherStudents from "./pages/TeacherStudents";
 
 function App() {
   return (
     <>
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/courses" element={<CourseCatalog />} />
         <Route path="/verify-email/:token" element={<VerifyEmail />} />
         <Route path="/become-instructor" element={<TeacherSignup />} />
 
 
         {/* STUDENT ROUTES */}
-        <Route element={<RoleRoute allowedRoles={["student", "user"]} />}>
-          <Route path="/student" element={<Dashboard />}>
-            {/* student/courses */}
+        <Route element={<RoleRoute allowedRoles={["student"]} />}>
+          <Route path="/student" element={<DashboardLayout />}>
+            <Route index element={<Dashboard />} />
           </Route>
         </Route>
 
@@ -40,6 +44,7 @@ function App() {
             />
             <Route path="create-course" element={<CreateCourse />} />
             <Route path="course/:id" element={<ManageCourse />} />
+            <Route path="students" element={<TeacherStudents />} />
 
           </Route>
 

@@ -1,4 +1,4 @@
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth";
 import heroStudent from "../assets/GX8KBbVmC6c.jpg";
 
 export default function Hero() {

@@ -1,14 +1,47 @@
-import { createContext, useContext, useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../axios/api";
 import { useNavigate } from "react-router-dom";
-
-const AuthContext = createContext(undefined);
+import { AuthContext } from "./auth";
 
 export function AuthProvider({ children }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+
+  const refreshUser = async () => {
+    try {
+      const res = await api.get("/user/profile");
+
+      if (res.data?.success) {
+        const currentUser = {
+          id: res.data.user?._id,
+          name: res.data.user?.name || "User",
+          email: res.data.user?.email,
+          role: res.data.user?.role || "user",
+        };
+
+        setUser(currentUser);
+        return currentUser;
+      }
+    } catch {
+      setUser(null);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        await refreshUser();
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  loadUser();
+}, []);
 
   // REGISTER API
   const signup = async (name, email, password) => {
@@ -57,18 +90,26 @@ export function AuthProvider({ children }) {
       setIsLoginOpen(false);
 
       const role = loggedInUser.role;
-      if(role === "admin") navigate("/admin");
-      else if (role === 'teacher') navigate("/teacher");
-      else navigate("/student");
+      if (role === "admin") navigate("/admin");
+      else if (role === "teacher") navigate("/teacher");
+      else if (role === "student") navigate("/student");
+      else navigate("/");
     } catch (error) {
       console.log(error.response?.data);
       alert('Invalid email or password: ' + error.response?.data?.message);
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+  try {
+    await api.post("/auth/logout");
+  } catch (error) {
+    console.log(error.response?.data || error.message);
+  } finally {
     setUser(null);
-  };
+    navigate("/");
+  }
+};
 
   const openLogin = () => {
     setIsLoginOpen(true);
@@ -94,9 +135,11 @@ export function AuthProvider({ children }) {
         user,
         isLoginOpen,
         isSignUpOpen,
+        authLoading,
 
         login,
         signup,
+        refreshUser,
 
         logout,
 
@@ -110,14 +153,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-
-  return context;
 }

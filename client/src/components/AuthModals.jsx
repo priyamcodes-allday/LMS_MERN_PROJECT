@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth";
 
 export function LoginModal() {
   const { isLoginOpen, closeLogin, login, openSignUp } = useAuth();
@@ -158,6 +158,9 @@ export function SignUpModal() {
               <input
                 type="password"
                 required
+                minLength="8"
+                pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*]).{8,}"
+                title="Password must be at least 8 characters and include uppercase, lowercase, number, and special character." 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"

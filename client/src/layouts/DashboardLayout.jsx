@@ -1,49 +1,28 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import {
-  Home,
-  BookOpen,
-  Calendar,
-  Award,
-  MessageSquare,
-  Users,
-  BarChart2,
-  Settings,
-  Search,
-  Bell,
-  Mail,
-  Menu
-} from "lucide-react";
-import {
   Home as HomeIcon,
   BookOpen as BookIcon,
-  Calendar as CalendarIcon,
-  Award as AwardIcon,
-  MessageSquare as MessageIcon,
-  Users as UsersIcon,
-  BarChart2 as ChartIcon,
   Settings as SettingsIcon,
   Search as SearchIcon,
   Bell as BellIcon,
   Mail as MailIcon,
+  LogOut as LogOutIcon,
   X as XIcon,
   Menu as MenuIcon
 } from "lucide-react";
+import { useAuth } from "../context/auth";
 import userImg from "../assets/faculty/teacher5.jpg";
 
 export default function DashboardLayout() {
+  const { user, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
 
   const navLinks = [
-    { name: "Dashboard", path: "/dashboard", icon: HomeIcon },
-    { name: "My Courses", path: "/dashboard/courses", icon: BookIcon },
-    { name: "Calendar", path: "/dashboard/calendar", icon: CalendarIcon },
-    { name: "Grades", path: "/dashboard/grades", icon: AwardIcon },
-    { name: "Messages", path: "/dashboard/messages", icon: MessageIcon },
-    { name: "People", path: "/dashboard/people", icon: UsersIcon },
-    { name: "Analytics", path: "/dashboard/analytics", icon: ChartIcon },
-    { name: "Settings", path: "/dashboard/settings", icon: SettingsIcon },
+    { name: "Dashboard", path: "/student", icon: HomeIcon },
+    { name: "Browse Courses", path: "/courses", icon: BookIcon },
+    { name: "Settings", path: "/student/settings", icon: SettingsIcon },
   ];
 
   return (
@@ -126,7 +105,7 @@ export default function DashboardLayout() {
               <SearchIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search courses, assignments, or people..."
+                placeholder="Search your courses..."
                 className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#0c3c2e]/20 focus:border-[#0c3c2e] transition-all"
               />
             </div>
@@ -149,7 +128,7 @@ export default function DashboardLayout() {
               <div className="flex items-center gap-3 cursor-pointer">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-bold text-gray-900 leading-none">
-                    Sarah Johnson
+                    {user?.name || "Student"}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">Student</p>
                 </div>
@@ -159,11 +138,18 @@ export default function DashboardLayout() {
                   className="w-9 h-9 rounded-full object-cover border border-gray-200"
                 />
               </div>
+              <button
+                onClick={logout}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 font-bold text-sm transition-colors"
+              >
+                <LogOutIcon className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
             </div>
           </header>
 
           {/* 3. Page Content Area (where the dashboard routes inject their content) */}
-          <main className="flex-1 overflow-y-auto bg-[#f8f9fa] p-8">
+          <main className="flex-1 overflow-y-auto bg-[#f8f9fa] p-4 sm:p-6 lg:p-8">
             <Outlet />
           </main>
         </div>

@@ -19,12 +19,12 @@ export default function VerifyEmail() {
         setStatus("success");
         // Redirect to home after 3 seconds
         setTimeout(() => navigate("/"), 3000);
-      } catch (error) {
+      } catch {
         setStatus("error");
       }
     };
     verify();
-  }, [token]);
+  }, [navigate, token]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

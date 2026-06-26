@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth";
 import { Link } from "react-router-dom";
 
 export default function Navbar() {
@@ -20,9 +20,9 @@ export default function Navbar() {
           <a href="#home" className="hover:text-white transition-colors">
             HOME
           </a>
-          <a href="#courses" className="hover:text-white transition-colors">
+          <Link to="/courses" className="hover:text-white transition-colors">
             COURSES
-          </a>
+          </Link>
           <a href="#products" className="hover:text-white transition-colors">
             PRODUCTS
           </a>
@@ -101,13 +101,13 @@ export default function Navbar() {
             >
               HOME
             </a>
-            <a
-              href="#courses"
+            <Link
+              to="/courses"
               onClick={() => setIsMobileOpen(false)}
               className="text-gray-200 hover:text-white font-semibold"
             >
               COURSES
-            </a>
+            </Link>
             <a
               href="#products"
               onClick={() => setIsMobileOpen(false)}

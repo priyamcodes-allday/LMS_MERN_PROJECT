@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { AlertCircle, ArrowRight, BookOpen } from "lucide-react";
 import api from "../axios/api";
 
 export default function TeacherSignup() {
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -54,12 +53,17 @@ export default function TeacherSignup() {
           <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
             <BookOpen className="w-8 h-8 text-[#0c3c2e]" />
           </div>
-          <h2 className="text-3xl font-extrabold text-gray-900">Application Received!</h2>
+          <h2 className="text-3xl font-extrabold text-gray-900">
+            Application Received!
+          </h2>
           <p className="mt-4 text-gray-500">
-            Thank you for applying to teach. Please check your email to verify your account. 
-            An admin will review your application shortly.
+            Thank you for applying to teach. Please check your email to verify
+            your account. An admin will review your application shortly.
           </p>
-          <Link to="/" className="mt-8 inline-block text-[#0c3c2e] font-bold hover:underline">
+          <Link
+            to="/"
+            className="mt-8 inline-block text-[#0c3c2e] font-bold hover:underline"
+          >
             Return to Homepage
           </Link>
         </div>
@@ -91,11 +95,15 @@ export default function TeacherSignup() {
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               {/* Basic Info */}
               <div className="sm:col-span-2">
-                <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-4">Account Details</h3>
+                <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-4">
+                  Account Details
+                </h3>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Full Name
+                </label>
                 <input
                   type="text"
                   name="name"
@@ -107,7 +115,9 @@ export default function TeacherSignup() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   name="email"
@@ -119,12 +129,16 @@ export default function TeacherSignup() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Password</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
                 <input
                   type="password"
                   name="password"
                   required
-                  minLength="6"
+                  minLength="8"
+                  pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*]).{8,}"
+                  title="Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
                   value={formData.password}
                   onChange={handleChange}
                   className="mt-1 w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e]"
@@ -133,11 +147,15 @@ export default function TeacherSignup() {
 
               {/* Professional Info */}
               <div className="sm:col-span-2 mt-4">
-                <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-4">Professional Profile</h3>
+                <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-4">
+                  Professional Profile
+                </h3>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Highest Qualification</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Highest Qualification
+                </label>
                 <input
                   type="text"
                   name="qualification"
@@ -150,7 +168,9 @@ export default function TeacherSignup() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Specialization</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Specialization
+                </label>
                 <input
                   type="text"
                   name="specialization"
@@ -163,7 +183,9 @@ export default function TeacherSignup() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Years of Experience</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Years of Experience
+                </label>
                 <input
                   type="number"
                   name="experience"
@@ -176,7 +198,9 @@ export default function TeacherSignup() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">LinkedIn Profile URL</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  LinkedIn Profile URL
+                </label>
                 <input
                   type="url"
                   name="linkedIn"
@@ -188,7 +212,9 @@ export default function TeacherSignup() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Short Bio</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Short Bio
+                </label>
                 <textarea
                   name="bio"
                   rows="3"

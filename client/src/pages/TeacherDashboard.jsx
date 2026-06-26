@@ -1,7 +1,6 @@
 import {
   Users,
   BookOpen,
-  DollarSign,
   UploadCloud,
   PlayCircle,
   CheckCircle,
@@ -9,7 +8,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import api from "../axios/api";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function TeacherDashboard() {

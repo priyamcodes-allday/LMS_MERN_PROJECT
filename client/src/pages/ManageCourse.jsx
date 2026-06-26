@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -6,11 +6,13 @@ import {
   Plus,
   Trash2,
   CheckCircle,
-  Clock,
   AlertCircle,
   PlayCircle,
   Image,
   Send,
+  Edit3,
+  Save,
+  X,
 } from "lucide-react";
 import api from "../axios/api";
 
@@ -19,9 +21,20 @@ export default function ManageCourse() {
   const navigate = useNavigate();
 
   const [course, setCourse] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+
+  const [isEditingCourse, setIsEditingCourse] = useState(false);
+  const [courseForm, setCourseForm] = useState({
+    title: "",
+    description: "",
+    price: "",
+    category: "",
+  });
+  const [isSavingCourse, setIsSavingCourse] = useState(false);
+  const [isDeletingCourse, setIsDeletingCourse] = useState(false);
 
   // Thumbnail upload state
   const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -32,25 +45,136 @@ export default function ManageCourse() {
   const [lessonData, setLessonData] = useState({ title: "", duration: "" });
   const [videoFile, setVideoFile] = useState(null);
   const [isAddingLesson, setIsAddingLesson] = useState(false);
+  const [editingLessonId, setEditingLessonId] = useState(null);
+  const [lessonEditData, setLessonEditData] = useState({
+    title: "",
+    duration: "",
+    order: "",
+  });
+  const [isSavingLesson, setIsSavingLesson] = useState(false);
 
   // Submit for approval
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchCourse();
-  }, [id]);
-
-  const fetchCourse = async () => {
+  const fetchCourse = useCallback(async () => {
     try {
-      setIsLoading(true);
       const res = await api.get(`/teacher/courses/${id}`);
       if (res.data?.success) {
         setCourse(res.data.course);
+        setCourseForm({
+          title: res.data.course.title || "",
+          description: res.data.course.description || "",
+          price: res.data.course.price ?? "",
+          category:
+            res.data.course.category?._id || res.data.course.category || "",
+        });
       }
-    } catch (err) {
+    } catch {
       setError("Failed to load course details.");
     } finally {
       setIsLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    api
+      .get("/v1/categories")
+      .then((res) => {
+        if (isActive && res.data?.success) {
+          setCategories(res.data.data || []);
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setCategories([]);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    api
+      .get(`/teacher/courses/${id}`)
+      .then((res) => {
+        if (isActive && res.data?.success) {
+          setCourse(res.data.course);
+          setCourseForm({
+            title: res.data.course.title || "",
+            description: res.data.course.description || "",
+            price: res.data.course.price ?? "",
+            category:
+              res.data.course.category?._id || res.data.course.category || "",
+          });
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setError("Failed to load course details.");
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [id]);
+
+  const handleCourseFormChange = (e) => {
+    setCourseForm({ ...courseForm, [e.target.name]: e.target.value });
+  };
+
+  const handleUpdateCourse = async (e) => {
+    e.preventDefault();
+    setIsSavingCourse(true);
+    setError("");
+
+    try {
+      const res = await api.put(`/teacher/courses/${id}`, {
+        title: courseForm.title,
+        description: courseForm.description,
+        price: Number(courseForm.price),
+        category: courseForm.category,
+      });
+
+      if (res.data?.success) {
+        setSuccessMsg(res.data.message || "Course updated.");
+        setIsEditingCourse(false);
+        fetchCourse();
+        setTimeout(() => setSuccessMsg(""), 3000);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update course.");
+    } finally {
+      setIsSavingCourse(false);
+    }
+  };
+
+  const handleDeleteCourse = async () => {
+    if (!confirm("Deactivate this course? It will no longer be active.")) return;
+    setIsDeletingCourse(true);
+    setError("");
+
+    try {
+      const res = await api.delete(`/teacher/courses/${id}`);
+      if (res.data?.success) {
+        setSuccessMsg(res.data.message || "Course deactivated.");
+        setTimeout(() => navigate("/teacher"), 800);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to deactivate course.");
+    } finally {
+      setIsDeletingCourse(false);
     }
   };
 
@@ -116,8 +240,45 @@ export default function ManageCourse() {
       setSuccessMsg("Lesson deleted.");
       fetchCourse();
       setTimeout(() => setSuccessMsg(""), 3000);
-    } catch (err) {
+    } catch {
       setError("Failed to delete lesson.");
+    }
+  };
+
+  const startEditingLesson = (lesson) => {
+    setEditingLessonId(lesson._id);
+    setLessonEditData({
+      title: lesson.title || "",
+      duration: lesson.duration ?? "",
+      order: lesson.order ?? "",
+    });
+  };
+
+  const handleUpdateLesson = async (lessonId) => {
+    setIsSavingLesson(true);
+    setError("");
+
+    try {
+      const res = await api.put(`/teacher/courses/${id}/lessons/${lessonId}`, {
+        title: lessonEditData.title,
+        duration:
+          lessonEditData.duration === ""
+            ? undefined
+            : Number(lessonEditData.duration),
+        order:
+          lessonEditData.order === "" ? undefined : Number(lessonEditData.order),
+      });
+
+      if (res.data?.success) {
+        setSuccessMsg("Lesson updated.");
+        setEditingLessonId(null);
+        fetchCourse();
+        setTimeout(() => setSuccessMsg(""), 3000);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update lesson.");
+    } finally {
+      setIsSavingLesson(false);
     }
   };
 
@@ -207,6 +368,148 @@ export default function ManageCourse() {
           <p className="text-sm font-semibold">{successMsg}</p>
         </div>
       )}
+
+      {/* Course Details */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Course Details</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Update title, category, price, or description.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsEditingCourse(!isEditingCourse)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-gray-200 transition-colors"
+            >
+              {isEditingCourse ? (
+                <>
+                  <X className="w-4 h-4" />
+                  Cancel
+                </>
+              ) : (
+                <>
+                  <Edit3 className="w-4 h-4" />
+                  Edit
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleDeleteCourse}
+              disabled={isDeletingCourse}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-600 font-semibold text-sm hover:bg-red-100 transition-colors disabled:opacity-50"
+            >
+              <Trash2 className="w-4 h-4" />
+              Deactivate
+            </button>
+          </div>
+        </div>
+
+        {isEditingCourse ? (
+          <form onSubmit={handleUpdateCourse} className="p-6 space-y-5">
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-1">
+                Course Title
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={courseForm.title}
+                onChange={handleCourseFormChange}
+                required
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e] bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-1">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={courseForm.description}
+                onChange={handleCourseFormChange}
+                required
+                rows="4"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e] bg-white resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-1">
+                  Category
+                </label>
+                <select
+                  name="category"
+                  value={courseForm.category}
+                  onChange={handleCourseFormChange}
+                  required
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e] bg-white"
+                >
+                  <option value="">Select category</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-1">
+                  Price
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  value={courseForm.price}
+                  onChange={handleCourseFormChange}
+                  min="0"
+                  step="0.01"
+                  required
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e] bg-white"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSavingCourse}
+              className="inline-flex items-center gap-2 bg-[#0c3c2e] text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-[#0c3c2e]/90 transition-colors disabled:opacity-50"
+            >
+              {isSavingCourse ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              Save Course
+            </button>
+          </form>
+        ) : (
+          <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <p className="text-xs font-semibold text-gray-500">Category</p>
+              <p className="mt-1 font-bold text-gray-900">
+                {course.category?.name || "Uncategorized"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-500">Price</p>
+              <p className="mt-1 font-bold text-gray-900">
+                ${course.price || 0}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-500">Active</p>
+              <p className="mt-1 font-bold text-gray-900">
+                {course.isActive === false ? "No" : "Yes"}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Thumbnail Section */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -358,29 +661,113 @@ export default function ManageCourse() {
               .map((lesson, idx) => (
                 <div
                   key={lesson._id || idx}
-                  className="p-5 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  className="p-5 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-9 h-9 bg-[#0c3c2e]/10 rounded-lg flex items-center justify-center text-[#0c3c2e] font-bold text-sm">
-                      {lesson.order || idx + 1}
+                  {editingLessonId === lesson._id ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-bold text-gray-900 mb-1">
+                            Lesson Title
+                          </label>
+                          <input
+                            type="text"
+                            value={lessonEditData.title}
+                            onChange={(e) =>
+                              setLessonEditData({
+                                ...lessonEditData,
+                                title: e.target.value,
+                              })
+                            }
+                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e] bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-900 mb-1">
+                            Duration
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={lessonEditData.duration}
+                            onChange={(e) =>
+                              setLessonEditData({
+                                ...lessonEditData,
+                                duration: e.target.value,
+                              })
+                            }
+                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e] bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-900 mb-1">
+                            Order
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={lessonEditData.order}
+                            onChange={(e) =>
+                              setLessonEditData({
+                                ...lessonEditData,
+                                order: e.target.value,
+                              })
+                            }
+                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e] bg-white"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleUpdateLesson(lesson._id)}
+                          disabled={isSavingLesson}
+                          className="inline-flex items-center gap-2 bg-[#0c3c2e] text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-[#0c3c2e]/90 transition-colors disabled:opacity-50"
+                        >
+                          <Save className="w-4 h-4" />
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingLessonId(null)}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-gray-200 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                          Cancel
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">
-                        {lesson.title}
-                      </h4>
-                      <p className="text-xs text-gray-500">
-                        {lesson.duration
-                          ? `${lesson.duration} min`
-                          : "No duration set"}
-                      </p>
+                  ) : (
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-9 h-9 bg-[#0c3c2e]/10 rounded-lg flex items-center justify-center text-[#0c3c2e] font-bold text-sm">
+                          {lesson.order || idx + 1}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">
+                            {lesson.title}
+                          </h4>
+                          <p className="text-xs text-gray-500">
+                            {lesson.duration
+                              ? `${lesson.duration} min`
+                              : "No duration set"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => startEditingLesson(lesson)}
+                          className="p-2 text-gray-500 hover:text-[#0c3c2e] hover:bg-[#0c3c2e]/10 rounded-lg transition-colors"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteLesson(lesson._id)}
+                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteLesson(lesson._id)}
-                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  )}
                 </div>
               ))}
           </div>

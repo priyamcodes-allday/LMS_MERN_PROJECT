@@ -22,7 +22,7 @@ export default function CreateCourse() {
       try {
         const res = await api.get("/v1/categories");
         if (res.data?.success) {
-          setCategories(res.data.categories || []);
+          setCategories(res.data.data || []);
         }
       } catch (err) {
         console.error("Failed to load categories", err);
