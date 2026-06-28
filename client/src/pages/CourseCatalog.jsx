@@ -5,36 +5,34 @@ import {
   CheckCircle,
   Heart,
   Loader2,
-  LogIn,
   ShoppingCart,
   Star,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../axios/api";
 import { useAuth } from "../context/auth";
+import CourseThumbnail from "../components/CourseThumbnail";
 
 export default function CourseCatalog() {
   const navigate = useNavigate();
   const { user, authLoading, openLogin, refreshUser } = useAuth();
   const [courses, setCourses] = useState([]);
   const [reviewStats, setReviewStats] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [buyingCourseId, setBuyingCourseId] = useState("");
   const [busyActionId, setBusyActionId] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    if (authLoading || !user) return;
-
     const fetchCourses = async () => {
       try {
         setIsLoading(true);
         setError("");
-        const res = await api.get("/student/courses");
+        const res = await api.get("/v1/courses");
 
         if (res.data?.success) {
-          const approvedCourses = res.data.courses || [];
+          const approvedCourses = res.data.data || [];
           setCourses(approvedCourses);
 
           const stats = await Promise.all(
@@ -58,9 +56,15 @@ export default function CourseCatalog() {
     };
 
     fetchCourses();
-  }, [authLoading, user]);
+  }, []);
 
   const handleBuyCourse = async (courseId) => {
+    if (!user) {
+      sessionStorage.setItem("postLoginRedirect", "/courses");
+      openLogin();
+      return;
+    }
+
     try {
       setBuyingCourseId(courseId);
       setError("");
@@ -68,13 +72,6 @@ export default function CourseCatalog() {
 
       const res = await api.post(`/student/courses/${courseId}/buy`);
       const latestUser = await refreshUser();
-      const studentId = latestUser?.id || user?.id;
-
-      if (studentId) {
-        await api
-          .post("/v1/enrollments", { student: studentId, course: courseId })
-          .catch(() => null);
-      }
 
       setSuccess(res.data?.message || "Course enrolled successfully.");
 
@@ -89,6 +86,12 @@ export default function CourseCatalog() {
   };
 
   const requireStudent = () => {
+    if (!user) {
+      sessionStorage.setItem("postLoginRedirect", "/courses");
+      openLogin();
+      return false;
+    }
+
     if (user.role !== "student") {
       setError("Enroll in a course first to activate student cart and wishlist features.");
       return false;
@@ -135,32 +138,10 @@ export default function CourseCatalog() {
     }
   };
 
-  if (authLoading) {
+  if (authLoading && !courses.length) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[#0c3c2e]" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
-        <div className="max-w-md text-center bg-white border border-gray-100 rounded-2xl p-8 shadow-sm">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-[#0c3c2e]/10 flex items-center justify-center text-[#0c3c2e] mb-4">
-            <LogIn className="w-7 h-7" />
-          </div>
-          <h1 className="text-2xl font-black text-gray-900">Log in to browse courses</h1>
-          <p className="text-gray-500 mt-3">
-            Approved courses are available after sign in, and enrolling promotes your account to student.
-          </p>
-          <button
-            onClick={openLogin}
-            className="mt-6 inline-flex items-center gap-2 bg-[#0c3c2e] text-white px-5 py-3 rounded-xl font-bold hover:bg-[#0c3c2e]/90 transition-colors"
-          >
-            Log In <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
       </div>
     );
   }
@@ -177,7 +158,7 @@ export default function CourseCatalog() {
               Approved courses ready for enrollment
             </h1>
           </div>
-          {user.role === "student" && (
+          {user?.role === "student" && (
             <button
               onClick={() => navigate("/student")}
               className="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl font-bold hover:bg-gray-100 transition-colors"
@@ -220,17 +201,7 @@ export default function CourseCatalog() {
                 className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm flex flex-col"
               >
                 <div className="aspect-video bg-gray-100">
-                  {course.thumbnail ? (
-                    <img
-                      src={course.thumbnail}
-                      alt={course.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      <BookOpen className="w-10 h-10" />
-                    </div>
-                  )}
+                  <CourseThumbnail src={course.thumbnail} alt={course.title} />
                 </div>
                 <div className="p-5 flex flex-col gap-4 flex-1">
                   <div className="space-y-2">

@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const Progress = require("../models/Progress");
 const Course = require("../models/Course");
 const User = require("../../auth/models/userSchema");
-const Enrollment = require("../models/Enrollment");
+const Enrollment = require("../../auth/models/enrollmentSchema");
 
 class ProgressController {
   async completeLesson(req, res) {

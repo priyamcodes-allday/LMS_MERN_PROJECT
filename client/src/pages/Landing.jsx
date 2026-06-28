@@ -1,6 +1,5 @@
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
-import { LoginModal, SignUpModal } from "../components/AuthModals";
 import Sponsors from "../components/Sponsors";
 import Journey from "../components/Journey";
 import Courses from "../components/Courses";
@@ -31,8 +30,6 @@ function Landing() {
         </main>
         <Footer/>
 
-        <LoginModal />
-        <SignUpModal />
       </div>
     </>
   );

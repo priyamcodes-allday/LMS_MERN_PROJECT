@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const Enrollment = require("../models/Enrollment");
+const Enrollment = require("../../auth/models/enrollmentSchema");
 const Course = require("../models/Course");
 const User = require("../../auth/models/userSchema");
 

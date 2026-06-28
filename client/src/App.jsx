@@ -17,6 +17,7 @@ import TeacherStudents from "./pages/TeacherStudents";
 import StudentCart from "./pages/StudentCart";
 import StudentWishlist from "./pages/StudentWishlist";
 import StudentCoursePlayer from "./pages/StudentCoursePlayer";
+import { LoginModal, SignUpModal } from "./components/AuthModals";
 
 function App() {
   return (
@@ -67,6 +68,8 @@ function App() {
 
         
       </Routes>
+      <LoginModal />
+      <SignUpModal />
     </>
   );
 }

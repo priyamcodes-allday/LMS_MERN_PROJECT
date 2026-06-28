@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, Heart, Loader2, ShoppingCart, Trash2 } from "lucide-react";
+import { ArrowRight, Heart, Loader2, ShoppingCart, Trash2 } from "lucide-react";
 import api from "../axios/api";
 import { useAuth } from "../context/auth";
+import CourseThumbnail from "../components/CourseThumbnail";
 
 export default function StudentWishlist() {
   const { user, refreshUser } = useAuth();
@@ -91,9 +92,6 @@ export default function StudentWishlist() {
       setError("");
       const res = await api.post(`/student/courses/${courseId}/buy`);
       await api
-        .post("/v1/enrollments", { student: user.id, course: courseId })
-        .catch(() => null);
-      await api
         .delete("/v1/wishlist/remove", {
           data: { student: user.id, course: courseId },
         })
@@ -153,13 +151,11 @@ export default function StudentWishlist() {
             {courses.map((course) => (
               <article key={course._id} className="p-5 flex flex-col lg:flex-row gap-5 lg:items-center">
                 <div className="w-full lg:w-44 aspect-video bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
-                  {course.thumbnail ? (
-                    <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      <BookOpen className="w-8 h-8" />
-                    </div>
-                  )}
+                  <CourseThumbnail
+                    src={course.thumbnail}
+                    alt={course.title}
+                    iconClassName="w-8 h-8"
+                  />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-black text-gray-900">{course.title}</h3>

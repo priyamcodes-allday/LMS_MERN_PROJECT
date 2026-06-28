@@ -160,12 +160,16 @@ class StudentController {
         await User.findByIdAndUpdate(req.user._id, { role: "student" });
       }
 
-      // Send confirmation email
-      await sendEmail({
-        to: req.user.email,
-        subject: `Enrollment Confirmed: ${course.title}`,
-        html: courseEnrollmentTemplate(req.user.name, course.title),
-      });
+      // Send confirmation email without blocking the enrollment result.
+      try {
+        await sendEmail({
+          to: req.user.email,
+          subject: `Enrollment Confirmed: ${course.title}`,
+          html: courseEnrollmentTemplate(req.user.name, course.title),
+        });
+      } catch (emailError) {
+        console.error("Enrollment email failed:", emailError.message);
+      }
 
       res.status(200).json({
         success: true,

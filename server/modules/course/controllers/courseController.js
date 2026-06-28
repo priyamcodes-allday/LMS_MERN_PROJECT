@@ -58,6 +58,7 @@ class CourseController {
         {
           $match: {
             isActive: true,
+            status: "approved",
           },
         },
         {
@@ -100,6 +101,8 @@ class CourseController {
             title: 1,
             description: 1,
             price: 1,
+            thumbnail: 1,
+            status: 1,
             duration: 1,
             lessons: 1,
             createdAt: 1,

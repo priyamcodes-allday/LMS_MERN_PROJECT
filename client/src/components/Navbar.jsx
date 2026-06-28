@@ -20,9 +20,9 @@ export default function Navbar() {
           <a href="#home" className="hover:text-white transition-colors">
             HOME
           </a>
-          <Link to="/courses" className="hover:text-white transition-colors">
+          <a href="#courses" className="hover:text-white transition-colors">
             COURSES
-          </Link>
+          </a>
           <a href="#products" className="hover:text-white transition-colors">
             PRODUCTS
           </a>
@@ -101,13 +101,13 @@ export default function Navbar() {
             >
               HOME
             </a>
-            <Link
-              to="/courses"
+            <a
+              href="#courses"
               onClick={() => setIsMobileOpen(false)}
               className="text-gray-200 hover:text-white font-semibold"
             >
               COURSES
-            </Link>
+            </a>
             <a
               href="#products"
               onClick={() => setIsMobileOpen(false)}

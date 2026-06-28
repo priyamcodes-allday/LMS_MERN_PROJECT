@@ -95,10 +95,6 @@ export default function StudentCoursePlayer() {
           return;
         }
 
-        await api
-          .post("/v1/enrollments", { student: studentId, course: id })
-          .catch(() => null);
-
         if (isActive) {
           setCourse(enrollment.course);
           setActiveLessonId(enrollment.course.lessons?.[0]?._id || "");

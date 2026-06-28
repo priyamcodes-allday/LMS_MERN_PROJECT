@@ -23,10 +23,12 @@ export function AuthProvider({ children }) {
         };
 
         setUser(currentUser);
+        localStorage.setItem("learnable_has_session", "true");
         return currentUser;
       }
     } catch {
       setUser(null);
+      localStorage.removeItem("learnable_has_session");
       return null;
     }
   };
@@ -34,7 +36,9 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        await refreshUser();
+        if (localStorage.getItem("learnable_has_session") === "true") {
+          await refreshUser();
+        }
     } finally {
       setAuthLoading(false);
     }
@@ -86,8 +90,16 @@ export function AuthProvider({ children }) {
       console.log(res.data);
 
       setUser(loggedInUser);
+      localStorage.setItem("learnable_has_session", "true");
 
       setIsLoginOpen(false);
+
+      const postLoginRedirect = sessionStorage.getItem("postLoginRedirect");
+      if (postLoginRedirect) {
+        sessionStorage.removeItem("postLoginRedirect");
+        navigate(postLoginRedirect);
+        return;
+      }
 
       const role = loggedInUser.role;
       if (role === "admin") navigate("/admin");
@@ -107,6 +119,7 @@ export function AuthProvider({ children }) {
     console.log(error.response?.data || error.message);
   } finally {
     setUser(null);
+    localStorage.removeItem("learnable_has_session");
     navigate("/");
   }
 };

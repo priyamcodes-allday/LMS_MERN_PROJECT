@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const Review = require("../models/Review");
 const User = require("../../auth/models/userSchema");
 const Course = require("../models/Course");
-const Enrollment = require("../models/Enrollment");
+const Enrollment = require("../../auth/models/enrollmentSchema");
 
 class ReviewController {
   async createReview(req, res) {

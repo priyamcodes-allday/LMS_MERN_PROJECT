@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import api from "../axios/api";
+import CourseThumbnail from "../components/CourseThumbnail";
 
 export default function ManageCourse() {
   const { id } = useParams();
@@ -521,17 +522,13 @@ export default function ManageCourse() {
         </div>
         <div className="p-6">
           <div className="flex flex-col sm:flex-row items-start gap-6">
-            {course.thumbnail ? (
-              <img
+            <div className="w-48 h-32 bg-gray-100 rounded-xl overflow-hidden border border-dashed border-gray-300">
+              <CourseThumbnail
                 src={course.thumbnail}
                 alt="Course Thumbnail"
-                className="w-48 h-32 object-cover rounded-xl border border-gray-200"
+                iconClassName="w-8 h-8"
               />
-            ) : (
-              <div className="w-48 h-32 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 border border-dashed border-gray-300">
-                <Image className="w-8 h-8" />
-              </div>
-            )}
+            </div>
             <div className="flex-1 space-y-3">
               <input
                 type="file"
