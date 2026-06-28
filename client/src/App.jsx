@@ -14,6 +14,9 @@ import TeacherSignup from "./pages/TeacherSignup";
 import ManageCourse from "./pages/ManageCourse";
 import CourseCatalog from "./pages/CourseCatalog";
 import TeacherStudents from "./pages/TeacherStudents";
+import StudentCart from "./pages/StudentCart";
+import StudentWishlist from "./pages/StudentWishlist";
+import StudentCoursePlayer from "./pages/StudentCoursePlayer";
 
 function App() {
   return (
@@ -29,6 +32,9 @@ function App() {
         <Route element={<RoleRoute allowedRoles={["student"]} />}>
           <Route path="/student" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
+            <Route path="cart" element={<StudentCart />} />
+            <Route path="wishlist" element={<StudentWishlist />} />
+            <Route path="course/:id" element={<StudentCoursePlayer />} />
           </Route>
         </Route>
 

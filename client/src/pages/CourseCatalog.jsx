@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, BookOpen, CheckCircle, Loader2, LogIn } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  CheckCircle,
+  Heart,
+  Loader2,
+  LogIn,
+  ShoppingCart,
+  Star,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../axios/api";
 import { useAuth } from "../context/auth";
@@ -8,8 +17,10 @@ export default function CourseCatalog() {
   const navigate = useNavigate();
   const { user, authLoading, openLogin, refreshUser } = useAuth();
   const [courses, setCourses] = useState([]);
+  const [reviewStats, setReviewStats] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [buyingCourseId, setBuyingCourseId] = useState("");
+  const [busyActionId, setBusyActionId] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -23,7 +34,21 @@ export default function CourseCatalog() {
         const res = await api.get("/student/courses");
 
         if (res.data?.success) {
-          setCourses(res.data.courses || []);
+          const approvedCourses = res.data.courses || [];
+          setCourses(approvedCourses);
+
+          const stats = await Promise.all(
+            approvedCourses.map(async (course) => {
+              try {
+                const statsRes = await api.get(`/v1/reviews/course/${course._id}/stats`);
+                return [course._id, statsRes.data?.data || { averageRating: 0, totalReviews: 0 }];
+              } catch {
+                return [course._id, { averageRating: 0, totalReviews: 0 }];
+              }
+            }),
+          );
+
+          setReviewStats(Object.fromEntries(stats));
         }
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load courses.");
@@ -43,6 +68,13 @@ export default function CourseCatalog() {
 
       const res = await api.post(`/student/courses/${courseId}/buy`);
       const latestUser = await refreshUser();
+      const studentId = latestUser?.id || user?.id;
+
+      if (studentId) {
+        await api
+          .post("/v1/enrollments", { student: studentId, course: courseId })
+          .catch(() => null);
+      }
 
       setSuccess(res.data?.message || "Course enrolled successfully.");
 
@@ -53,6 +85,53 @@ export default function CourseCatalog() {
       setError(err.response?.data?.message || "Failed to enroll in this course.");
     } finally {
       setBuyingCourseId("");
+    }
+  };
+
+  const requireStudent = () => {
+    if (user.role !== "student") {
+      setError("Enroll in a course first to activate student cart and wishlist features.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const addToCart = async (courseId) => {
+    if (!requireStudent()) return;
+
+    try {
+      setBusyActionId(`cart-${courseId}`);
+      setError("");
+      setSuccess("");
+      const res = await api.post("/v1/cart", {
+        student: user.id,
+        course: courseId,
+      });
+      setSuccess(res.data?.message || "Course added to cart.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to add course to cart.");
+    } finally {
+      setBusyActionId("");
+    }
+  };
+
+  const addToWishlist = async (courseId) => {
+    if (!requireStudent()) return;
+
+    try {
+      setBusyActionId(`wishlist-${courseId}`);
+      setError("");
+      setSuccess("");
+      const res = await api.post("/v1/wishlist", {
+        student: user.id,
+        course: courseId,
+      });
+      setSuccess(res.data?.message || "Course added to wishlist.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to add course to wishlist.");
+    } finally {
+      setBusyActionId("");
     }
   };
 
@@ -164,9 +243,17 @@ export default function CourseCatalog() {
                     <p className="text-sm text-gray-500 line-clamp-3">
                       {course.description}
                     </p>
+                    <div className="flex items-center gap-2 text-sm font-bold text-amber-600">
+                      <Star className="w-4 h-4 fill-current" />
+                      <span>{reviewStats[course._id]?.averageRating || 0}</span>
+                      <span className="text-gray-400">
+                        ({reviewStats[course._id]?.totalReviews || 0} reviews)
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="mt-auto flex items-center justify-between gap-4 pt-4 border-t border-gray-100">
+                  <div className="mt-auto space-y-3 pt-4 border-t border-gray-100">
+                    <div className="flex items-center justify-between gap-4">
                     <span className="text-xl font-black text-[#0c3c2e]">
                       ${course.price || 0}
                     </span>
@@ -182,6 +269,33 @@ export default function CourseCatalog() {
                       )}
                       Enroll
                     </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => addToCart(course._id)}
+                        disabled={busyActionId === `cart-${course._id}`}
+                        className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-3 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-colors disabled:opacity-60"
+                      >
+                        {busyActionId === `cart-${course._id}` ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <ShoppingCart className="w-4 h-4" />
+                        )}
+                        Cart
+                      </button>
+                      <button
+                        onClick={() => addToWishlist(course._id)}
+                        disabled={busyActionId === `wishlist-${course._id}`}
+                        className="inline-flex items-center justify-center gap-2 bg-red-50 text-red-600 px-3 py-2.5 rounded-xl font-bold hover:bg-red-100 transition-colors disabled:opacity-60"
+                      >
+                        {busyActionId === `wishlist-${course._id}` ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Heart className="w-4 h-4" />
+                        )}
+                        Save
+                      </button>
+                    </div>
                   </div>
                 </div>
               </article>

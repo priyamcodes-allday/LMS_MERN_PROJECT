@@ -21,6 +21,7 @@ export default function Dashboard() {
     totalSpent: 0,
     totalTeachers: 0,
   });
+  const [progressByCourse, setProgressByCourse] = useState({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -39,7 +40,24 @@ export default function Dashboard() {
         }
 
         if (coursesRes.data?.success) {
-          setEnrolledCourses(coursesRes.data.enrollments || []);
+          const enrollments = coursesRes.data.enrollments || [];
+          setEnrolledCourses(enrollments);
+
+          const progressResults = await Promise.all(
+            enrollments.map(async (enrollment) => {
+              const courseId = enrollment.course?._id;
+              if (!courseId) return null;
+
+              try {
+                const res = await api.get(`/v1/progress/${user.id}/${courseId}`);
+                return [courseId, res.data?.data?.progressPercentage || 0];
+              } catch {
+                return [courseId, 0];
+              }
+            }),
+          );
+
+          setProgressByCourse(Object.fromEntries(progressResults.filter(Boolean)));
         }
       } catch (error) {
         console.log("Error fetching dashboard data:", error);
@@ -134,14 +152,17 @@ export default function Dashboard() {
           <div className="mt-6">
             <div className="flex items-center justify-between text-xs font-bold text-gray-500 mb-2">
               <span>Progress</span>
-              <span>0%</span>
+              <span>{Math.round(progressByCourse[latestCourse?._id] || 0)}%</span>
             </div>
             <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-[#0c3c2e] rounded-full" style={{ width: "0%" }}></div>
+              <div
+                className="h-full bg-[#0c3c2e] rounded-full"
+                style={{ width: `${progressByCourse[latestCourse?._id] || 0}%` }}
+              ></div>
             </div>
           </div>
           <p className="text-sm text-gray-500 mt-4">
-            Lesson progress will update here when progress tracking is connected.
+            Continue your lessons and mark them complete to update progress.
           </p>
         </div>
       </section>
@@ -209,6 +230,7 @@ export default function Dashboard() {
             {enrolledCourses.map((enrollment, idx) => {
               const course = enrollment.course;
               if (!course) return null;
+              const courseProgress = progressByCourse[course._id] || 0;
 
               return (
                 <article
@@ -249,18 +271,23 @@ export default function Dashboard() {
                         <div>
                           <div className="flex justify-between text-xs mb-1.5">
                             <span className="font-bold text-gray-500">Progress</span>
-                            <span className="font-black text-gray-900">0%</span>
+                            <span className="font-black text-gray-900">
+                              {Math.round(courseProgress)}%
+                            </span>
                           </div>
                           <div className="w-full bg-gray-100 rounded-full h-2.5">
                             <div
                               className="bg-[#0c3c2e] h-2.5 rounded-full"
-                              style={{ width: "0%" }}
+                              style={{ width: `${courseProgress}%` }}
                             ></div>
                           </div>
                         </div>
-                        <button className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-black text-sm hover:bg-gray-200 transition-colors">
+                        <Link
+                          to={`/student/course/${course._id}`}
+                          className="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-black text-sm hover:bg-gray-200 transition-colors"
+                        >
                           Open
-                        </button>
+                        </Link>
                       </div>
                     </div>
                   </div>

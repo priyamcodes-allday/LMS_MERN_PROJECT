@@ -3,6 +3,8 @@ import { useState } from "react";
 import {
   Home as HomeIcon,
   BookOpen as BookIcon,
+  Heart as HeartIcon,
+  ShoppingCart as CartIcon,
   Settings as SettingsIcon,
   Search as SearchIcon,
   Bell as BellIcon,
@@ -22,6 +24,8 @@ export default function DashboardLayout() {
   const navLinks = [
     { name: "Dashboard", path: "/student", icon: HomeIcon },
     { name: "Browse Courses", path: "/courses", icon: BookIcon },
+    { name: "Cart", path: "/student/cart", icon: CartIcon },
+    { name: "Wishlist", path: "/student/wishlist", icon: HeartIcon },
     { name: "Settings", path: "/student/settings", icon: SettingsIcon },
   ];
 
