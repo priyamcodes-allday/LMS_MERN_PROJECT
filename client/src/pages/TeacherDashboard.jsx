@@ -108,7 +108,7 @@ export default function TeacherDashboard() {
          className="flex items-center gap-2 bg-[#0c3c2e] hover:bg-[#0c3c2e]/90 text-white px-5 py-2.5 rounded-lg font-semibold transition-colors shadow-sm"
        >
          <UploadCloud className="w-5 h-5" />
-         Upload New Video
+         Create Course Draft
        </Link>
 
         </div>

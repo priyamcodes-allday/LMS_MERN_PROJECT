@@ -1,8 +1,24 @@
 const mongoose = require("mongoose");
+const fs = require("fs");
 const Course = require("../models/Course");
 const Category = require("../models/Category");
 const User = require("../../auth/models/userSchema");
 const cloudinary = require("../../../config/cloudinary");
+
+const removeTempFile = (filePath) => {
+  if (!filePath) return;
+  fs.promises.unlink(filePath).catch(() => {});
+};
+
+const ensureCloudinaryConfigured = () => {
+  if (
+    !cloudinary.config().cloud_name ||
+    !cloudinary.config().api_key ||
+    !cloudinary.config().api_secret
+  ) {
+    throw new Error("Cloudinary is not configured on the server.");
+  }
+};
 
 class CourseController {
   // Create Course
@@ -546,13 +562,21 @@ class CourseController {
         });
       }
 
+      ensureCloudinaryConfigured();
+
       if (course.thumbnailPublicId) {
         await cloudinary.uploader.destroy(course.thumbnailPublicId);
       }
 
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "lms/courses",
-      });
+      let result;
+      try {
+        result = await cloudinary.uploader.upload(req.file.path, {
+          folder: "lms/courses",
+          resource_type: "image",
+        });
+      } finally {
+        removeTempFile(req.file.path);
+      }
 
       course.thumbnail = result.secure_url;
       course.thumbnailPublicId = result.public_id;

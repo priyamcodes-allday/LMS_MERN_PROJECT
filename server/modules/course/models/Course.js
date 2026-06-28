@@ -12,6 +12,11 @@ const lessonSchema = new mongoose.Schema({
     default: "",
   },
 
+  videoPublicId: {
+    type: String,
+    default: "",
+  },
+
   resources: [
     {
       type: String,

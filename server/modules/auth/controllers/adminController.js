@@ -398,11 +398,15 @@ class AdminController {
 
       const course = result[0];
 
-      await sendEmail({
-        to: course.teacher.email,
-        subject: "Course Approved - LMS Platform",
-        html: courseApprovedTemplate(course.teacher.name, course.title),
-      });
+      try {
+        await sendEmail({
+          to: course.teacher.email,
+          subject: "Course Approved - LMS Platform",
+          html: courseApprovedTemplate(course.teacher.name, course.title),
+        });
+      } catch (emailError) {
+        console.error("Course approval email failed:", emailError.message);
+      }
 
       res
         .status(200)

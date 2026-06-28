@@ -1,12 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
 
 const teacherDashboardController = require("../controllers/teacherController");
 const { protect } = require("../middlewares/authMiddleware");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
-
-const upload = multer({ dest: "uploads/" });
+const upload = require("../../course/middlewares/upload");
 
 router.use(protect, authorizeRoles("teacher"));
 

@@ -1,9 +1,25 @@
 const mongoose = require("mongoose");
+const fs = require("fs");
 const Course = require("../../course/models/Course");
 const Category = require("../../course/models/Category");
 const Enrollment = require("../models/enrollmentSchema");
 const ApiError = require("../utils/apiError");
 const cloudinary = require("../../../config/cloudinary");
+
+const removeTempFile = (filePath) => {
+  if (!filePath) return;
+  fs.promises.unlink(filePath).catch(() => {});
+};
+
+const ensureCloudinaryConfigured = () => {
+  if (
+    !cloudinary.config().cloud_name ||
+    !cloudinary.config().api_key ||
+    !cloudinary.config().api_secret
+  ) {
+    throw new ApiError(500, "Cloudinary is not configured on the server.");
+  }
+};
 
 class TeacherDashboardController {
   // ─────────────────────────────────────────────
@@ -350,15 +366,23 @@ class TeacherDashboardController {
       const { title, resources, duration, order } = req.body;
 
       let videoUrl = "";
+      let videoPublicId = "";
       if(req.file){
-        const result = await cloudinary.uploader.upload(req.file.path, {
-          folder: "lms/videos",
-          resource_type: "video",
-        })
-        videoUrl = result.secure_url;
+        ensureCloudinaryConfigured();
+        try {
+          const result = await cloudinary.uploader.upload(req.file.path, {
+            folder: "lms/videos",
+            resource_type: "video",
+          })
+          videoUrl = result.secure_url;
+          videoPublicId = result.public_id;
+        } finally {
+          removeTempFile(req.file.path);
+        }
       }
 
-      const orderToUse = order ?? course.lessons.length + 1;
+      const orderToUse = order ? Number(order) : course.lessons.length + 1;
+      const durationToUse = duration ? Number(duration) : 0;
 
       const orderTaken = course.lessons.some((l) => l.order === orderToUse);
       if (orderTaken) {
@@ -368,8 +392,9 @@ class TeacherDashboardController {
       course.lessons.push({
         title,
         videoUrl,
+        videoPublicId,
         resources,
-        duration,
+        duration: durationToUse,
         order: orderToUse,
       });
 
@@ -485,15 +510,23 @@ class TeacherDashboardController {
         return next(new ApiError(400, "Please upload an image."));
       }
 
+      ensureCloudinaryConfigured();
+
       // Remove the old thumbnail from Cloudinary before uploading the new one,
       // so replaced images don't pile up as orphaned files in storage
       if (course.thumbnailPublicId) {
         await cloudinary.uploader.destroy(course.thumbnailPublicId);
       }
 
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "lms/courses",
-      });
+      let result;
+      try {
+        result = await cloudinary.uploader.upload(req.file.path, {
+          folder: "lms/courses",
+          resource_type: "image",
+        });
+      } finally {
+        removeTempFile(req.file.path);
+      }
 
       course.thumbnail = result.secure_url;
       course.thumbnailPublicId = result.public_id;
