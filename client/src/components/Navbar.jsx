@@ -23,16 +23,22 @@ export default function Navbar() {
           <a href="#courses" className="hover:text-white transition-colors">
             COURSES
           </a>
-          <a href="#products" className="hover:text-white transition-colors">
-            PRODUCTS
+          <a href="/student" className="hover:text-white transition-colors">
+            DASHBOARD
           </a>
           <a href="#mentors" className="hover:text-white transition-colors">
             MENTORS
           </a>
-          <a href="#testimonials" className="hover:text-white transition-colors">
+          <a
+            href="#testimonials"
+            className="hover:text-white transition-colors"
+          >
             TESTIMONIALS
           </a>
-          <Link to="/become-instructor" className="text-[#dce739] hover:text-white transition-colors">
+          <Link
+            to="/become-instructor"
+            className="text-[#dce739] hover:text-white transition-colors"
+          >
             TEACH WITH US
           </Link>
         </div>

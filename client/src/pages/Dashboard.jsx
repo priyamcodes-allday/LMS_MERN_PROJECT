@@ -50,7 +50,9 @@ export default function Dashboard() {
               if (!courseId) return null;
 
               try {
-                const res = await api.get(`/v1/progress/${user.id}/${courseId}`);
+                const res = await api.get(
+                  `/v1/progress/${user.id}/${courseId}`,
+                );
                 return [courseId, res.data?.data?.progressPercentage || 0];
               } catch {
                 return [courseId, 0];
@@ -58,7 +60,9 @@ export default function Dashboard() {
             }),
           );
 
-          setProgressByCourse(Object.fromEntries(progressResults.filter(Boolean)));
+          setProgressByCourse(
+            Object.fromEntries(progressResults.filter(Boolean)),
+          );
         }
       } catch (error) {
         console.log("Error fetching dashboard data:", error);
@@ -116,7 +120,8 @@ export default function Dashboard() {
               Welcome back, {user?.name?.split(" ")[0] || "Student"}
             </h1>
             <p className="text-emerald-50 mt-3 max-w-xl">
-              Track your courses, continue learning, and discover your next skill path.
+              Track your courses, continue learning, and discover your next
+              skill path.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
@@ -127,7 +132,7 @@ export default function Dashboard() {
               </Link>
               {latestCourse && (
                 <a
-                  href="#my-courses"
+                  href="/"
                   className="inline-flex items-center gap-2 bg-white/10 text-white border border-white/20 px-5 py-3 rounded-xl font-bold hover:bg-white/15 transition-colors"
                 >
                   Continue Learning
@@ -144,7 +149,9 @@ export default function Dashboard() {
               <GraduationCap className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 font-semibold">Current focus</p>
+              <p className="text-sm text-gray-500 font-semibold">
+                Current focus
+              </p>
               <h2 className="text-lg font-black text-gray-900">
                 {latestCourse?.title || "Choose your first course"}
               </h2>
@@ -153,12 +160,16 @@ export default function Dashboard() {
           <div className="mt-6">
             <div className="flex items-center justify-between text-xs font-bold text-gray-500 mb-2">
               <span>Progress</span>
-              <span>{Math.round(progressByCourse[latestCourse?._id] || 0)}%</span>
+              <span>
+                {Math.round(progressByCourse[latestCourse?._id] || 0)}%
+              </span>
             </div>
             <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-[#0c3c2e] rounded-full"
-                style={{ width: `${progressByCourse[latestCourse?._id] || 0}%` }}
+                style={{
+                  width: `${progressByCourse[latestCourse?._id] || 0}%`,
+                }}
               ></div>
             </div>
           </div>
@@ -178,25 +189,36 @@ export default function Dashboard() {
               className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm"
             >
               <div className="flex items-center justify-between">
-                <div className={`w-10 h-10 rounded-xl ${stat.accent} flex items-center justify-center text-white`}>
+                <div
+                  className={`w-10 h-10 rounded-xl ${stat.accent} flex items-center justify-center text-white`}
+                >
                   <Icon className="w-5 h-5" />
                 </div>
                 <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
                   {stat.change}
                 </p>
               </div>
-              <h3 className="text-3xl font-black text-gray-900 mt-4">{stat.value}</h3>
-              <p className="text-sm font-semibold text-gray-500 mt-1">{stat.title}</p>
+              <h3 className="text-3xl font-black text-gray-900 mt-4">
+                {stat.value}
+              </h3>
+              <p className="text-sm font-semibold text-gray-500 mt-1">
+                {stat.title}
+              </p>
             </div>
           );
         })}
       </section>
 
-      <section id="my-courses" className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <section
+        id="my-courses"
+        className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+      >
         <div className="p-5 sm:p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-black text-gray-900">My Courses</h2>
-            <p className="text-sm text-gray-500 mt-1">Courses you are enrolled in.</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Courses you are enrolled in.
+            </p>
           </div>
           <Link
             to="/courses"
@@ -254,7 +276,8 @@ export default function Dashboard() {
                             {course.title}
                           </h3>
                           <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                            {course.description || "Course content is ready for you."}
+                            {course.description ||
+                              "Course content is ready for you."}
                           </p>
                         </div>
                         <span className="inline-flex w-fit items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
@@ -265,7 +288,9 @@ export default function Dashboard() {
                       <div className="mt-5 grid grid-cols-[1fr_auto] gap-4 items-center">
                         <div>
                           <div className="flex justify-between text-xs mb-1.5">
-                            <span className="font-bold text-gray-500">Progress</span>
+                            <span className="font-bold text-gray-500">
+                              Progress
+                            </span>
                             <span className="font-black text-gray-900">
                               {Math.round(courseProgress)}%
                             </span>
