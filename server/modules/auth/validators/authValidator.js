@@ -19,7 +19,6 @@ const registerSchema = Joi.object({
   password: passwordRule,
   role: Joi.string().valid("user", "teacher").default("user"),
 
-  // Teacher-only fields — optional here, but required IF role is "teacher"
   qualification: Joi.string().when("role", {
     is: "teacher",
     then: Joi.required(),
@@ -35,7 +34,7 @@ const registerSchema = Joi.object({
     then: Joi.required(),
     otherwise: Joi.optional(),
   }),
-  bio: Joi.string().max(500).optional(), // optional even for teachers
+  bio: Joi.string().max(500).optional(), 
   linkedIn: Joi.string().uri().optional(),
 });
 

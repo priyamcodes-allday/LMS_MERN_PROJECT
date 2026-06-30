@@ -6,11 +6,7 @@ const sendEmail = require("../utils/sendEmail");
 const { courseEnrollmentTemplate } = require("../utils/emailTamplates");
 
 class StudentController {
-  // GET /api/student/dashboard
-  // A summary/home-screen view: counts, total spend, and a "continue learning"
-  // style highlight of the most recent course. Full course-by-course detail
-  // belongs in getMyCourses() instead, so the two routes don't just duplicate
-  // each other.
+
   async getDashboard(req, res, next) {
     try {
       const enrollments = await Enrollment.aggregate([
@@ -38,7 +34,6 @@ class StudentController {
             preserveNullAndEmptyArrays: true,
           },
         },
-        // Most recently enrolled first, so [0] below is the "latest" course
         { $sort: { createdAt: -1 } },
         {
           $project: {
@@ -57,21 +52,18 @@ class StudentController {
 
       const totalEnrolled = enrollments.length;
 
-      // Total amount actually spent, counting only completed payments
       const totalSpent = enrollments.reduce(
         (sum, e) =>
           e.paymentStatus === "completed" ? sum + e.course.price : sum,
         0
       );
 
-      // How many distinct teachers this student has taken courses from
       const teacherIds = new Set(
         enrollments
           .filter((e) => e.course.teacher)
           .map((e) => e.course.teacher._id.toString())
       );
 
-      // "Continue learning" highlight - the most recently purchased course
       const recentCourse = enrollments[0] || null;
 
       res.status(200).json({
@@ -88,7 +80,6 @@ class StudentController {
     }
   }
 
-  // GET /api/student/courses  (browse approved courses)
   async browseCourses(req, res, next) {
     try {
       const courses = await Course.aggregate([
@@ -121,8 +112,6 @@ class StudentController {
     }
   }
 
-  // POST /api/student/courses/:id/buy
-  // When a user buys a course, their role becomes student
   async buyCourse(req, res, next) {
     try {
       const course = await Course.findOne({
@@ -133,7 +122,6 @@ class StudentController {
       if (!course)
         return next(new ApiError(404, "Course not found or not available."));
 
-      // Check if already enrolled
       const alreadyEnrolled = await Enrollment.findOne({
         student: req.user._id,
         course: course._id,
@@ -180,7 +168,6 @@ class StudentController {
     }
   }
 
-  // GET /api/student/my-courses
   async getMyCourses(req, res, next) {
     try {
       const enrollments = await Enrollment.aggregate([

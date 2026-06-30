@@ -22,10 +22,6 @@ const ensureCloudinaryConfigured = () => {
 };
 
 class TeacherDashboardController {
-  // ─────────────────────────────────────────────
-  // GET /api/teacher/dashboard
-  // Overview stats for the logged-in teacher
-  // ─────────────────────────────────────────────
   async getDashboard(req, res, next) {
     try {
       const courses = await Course.find({ teacher: req.user._id });
@@ -80,7 +76,7 @@ class TeacherDashboardController {
         description,
         price,
         category,
-        teacher: req.user._id, // always the logged-in teacher, never trusted from body
+        teacher: req.user._id, 
         status: "draft",
       });
 
@@ -94,10 +90,6 @@ class TeacherDashboardController {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // GET /api/teacher/courses
-  // All of THIS teacher's courses (any status), with optional ?status= filter
-  // ─────────────────────────────────────────────
   async getAllCourses(req, res, next) {
     try {
       const { status } = req.query;
@@ -138,10 +130,6 @@ class TeacherDashboardController {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // GET /api/teacher/courses/search?keyword=python
-  // Searches only within this teacher's own courses
-  // ─────────────────────────────────────────────
   async searchCourses(req, res, next) {
     try {
       const { keyword } = req.query;
@@ -161,10 +149,6 @@ class TeacherDashboardController {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // GET /api/teacher/courses/filter?category=...&minPrice=...&maxPrice=...&status=...
-  // Filters within this teacher's own courses
-  // ─────────────────────────────────────────────
   async filterCourses(req, res, next) {
     try {
       const { category, minPrice, maxPrice, status } = req.query;
@@ -188,10 +172,6 @@ class TeacherDashboardController {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // GET /api/teacher/courses/:id
-  // Full detail of ONE course - only if it belongs to this teacher
-  // ─────────────────────────────────────────────
   async getCourseById(req, res, next) {
     try {
       const result = await Course.aggregate([
@@ -237,16 +217,11 @@ class TeacherDashboardController {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // PUT /api/teacher/courses/:id
-  // Edits a course - only the owning teacher can edit it.
-  // Editing an approved course sends it back to "pending" for re-approval.
-  // ─────────────────────────────────────────────
   async updateCourse(req, res, next) {
     try {
       const course = await Course.findOne({
         _id: req.params.id,
-        teacher: req.user._id, // ownership check - teammate's version was missing this
+        teacher: req.user._id, 
       });
 
       if (!course) return next(new ApiError(404, "Course not found."));
@@ -284,10 +259,6 @@ class TeacherDashboardController {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // PUT /api/teacher/courses/:id/submit
-  // Sends a draft/rejected course to "pending" for admin review
-  // ─────────────────────────────────────────────
   async submitForApproval(req, res, next) {
     try {
       const course = await Course.findOne({
@@ -323,11 +294,6 @@ class TeacherDashboardController {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // DELETE /api/teacher/courses/:id
-  // Soft delete only - sets isActive false, never removes data.
-  // Matches the schema's isActive field rather than hard-deleting.
-  // ─────────────────────────────────────────────
   async deleteCourse(req, res, next) {
     try {
       const course = await Course.findOneAndUpdate(
@@ -348,12 +314,6 @@ class TeacherDashboardController {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // LESSONS
-  // Embedded subdocuments inside the course - accessed via course.lessons.id()
-  // ─────────────────────────────────────────────
-
-  // POST /api/teacher/courses/:id/lessons
   async addLesson(req, res, next) {
     try {
       const course = await Course.findOne({
@@ -410,7 +370,6 @@ class TeacherDashboardController {
     }
   }
 
-  // GET /api/teacher/courses/:id/lessons
   async getCourseLessons(req, res, next) {
     try {
       const course = await Course.findOne({
@@ -433,7 +392,6 @@ class TeacherDashboardController {
     }
   }
 
-  // PUT /api/teacher/courses/:id/lessons/:lessonId
   async updateLesson(req, res, next) {
     try {
       const course = await Course.findOne({
@@ -466,7 +424,6 @@ class TeacherDashboardController {
     }
   }
 
-  // DELETE /api/teacher/courses/:id/lessons/:lessonId
   async deleteLesson(req, res, next) {
     try {
       const course = await Course.findOne({
@@ -492,11 +449,6 @@ class TeacherDashboardController {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // PUT /api/teacher/courses/:id/thumbnail
-  // Uploads/replaces a course thumbnail via Cloudinary
-  // Expects multer to have parsed the file onto req.file (field name: "thumbnail")
-  // ─────────────────────────────────────────────
   async uploadThumbnail(req, res, next) {
     try {
       const course = await Course.findOne({
@@ -512,8 +464,6 @@ class TeacherDashboardController {
 
       ensureCloudinaryConfigured();
 
-      // Remove the old thumbnail from Cloudinary before uploading the new one,
-      // so replaced images don't pile up as orphaned files in storage
       if (course.thumbnailPublicId) {
         await cloudinary.uploader.destroy(course.thumbnailPublicId);
       }
@@ -543,10 +493,6 @@ class TeacherDashboardController {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // GET /api/teacher/students
-  // All students enrolled across all of this teacher's courses
-  // ─────────────────────────────────────────────
   async getMyStudents(req, res, next) {
     try {
       const courses = await Course.find({ teacher: req.user._id }).select(

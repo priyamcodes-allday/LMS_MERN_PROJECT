@@ -11,9 +11,10 @@ const {
 const {
   verifyEmailTemplate,
   resetPasswordTemplate,
-  teacherApprovedTemplate,
 } = require("../utils/emailTamplates");
 const jwt = require("jsonwebtoken");
+const clientIP=require('../middlewares/clientIP');
+const getClientIp = require("../middlewares/clientIP");
 
 class AuthController {
   // REGISTER
@@ -31,19 +32,15 @@ class AuthController {
         linkedIn,
       } = req.body;
 
-      // Check if user already exists
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         return next(new ApiError(400, "Email is already registered."));
       }
 
-      // Hash password manually (we don't use pre-save hooks)
       const hashedPassword = await bcrypt.hash(password, 12);
 
-      // Teachers start as unapproved; everyone else is approved
       const isApproved = role === "teacher" ? false : true;
 
-      // Create email verification token using crypto
       const rawToken = crypto.randomBytes(32).toString("hex");
       const hashedToken = crypto
         .createHash("sha256")
@@ -56,12 +53,11 @@ class AuthController {
         password: hashedPassword,
         role: role || "user",
         isApproved,
-        isEmailVerified: process.env.SKIP_EMAIL_VERIFICATION === "true", //  testing shortcut
+        isEmailVerified: process.env.SKIP_EMAIL_VERIFICATION === "true",
         emailVerifyToken: hashedToken,
-        emailVerifyExpire: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+        emailVerifyExpire: Date.now() + 24 * 60 * 60 * 1000,
       });
 
-      // If registering as teacher, save professional profile
       if (role === "teacher") {
         await TeacherProfile.create({
           user: user._id,
@@ -73,7 +69,6 @@ class AuthController {
         });
       }
 
-      // Send verification email
       const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${rawToken}`;
       await sendEmail({
         to: email,
@@ -132,7 +127,6 @@ class AuthController {
     try {
       const { email, password } = req.body;
 
-      // Find user and include password for comparison
       const user = await User.findOne({ email }).select("+password");
 
       if (!user) {
@@ -141,44 +135,43 @@ class AuthController {
 
       if (!user.isEmailVerified) {
         return next(
-          new ApiError(401, "Please verify your email before logging in."),
+          new ApiError(401, "Please verify your email before logging in.")
         );
       }
 
-      // Compare entered password with hashed password
       const isPasswordCorrect = await bcrypt.compare(password, user.password);
       if (!isPasswordCorrect) {
         return next(new ApiError(401, "Invalid email or password."));
       }
 
-      // Teacher must be approved by admin before logging in
       if (user.role === "teacher" && !user.isApproved) {
         return next(
-          new ApiError(403, "Your teacher account is pending admin approval."),
+          new ApiError(403, "Your teacher account is pending admin approval.")
         );
       }
+      //cientIP
+      user.loginCount+=1
+      user.lastLoginIp=getClientIp(req)
+      user.lastLoginAt=new Date()
 
-      // Generate tokens
       const accessToken = generateAccessToken(user._id, user.role);
       const refreshToken = generateRefreshToken(user._id);
 
-      // Save refresh token in DB
       user.refreshToken = refreshToken;
       await user.save();
 
-      // Send tokens as secure HTTP-only cookies
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
-        maxAge: 15 * 60 * 1000, // 15 minutes
+        maxAge: 15 * 60 * 1000,
       });
 
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
       res.status(200).json({
         success: true,
@@ -188,6 +181,8 @@ class AuthController {
           name: user.name,
           email: user.email,
           role: user.role,
+          loginCount:user.loginCount,
+          loginIP:user.lastLoginIp
         },
         // Testing only — tokens are already in HTTP-only cookies, this just lets you see them in Postman
         ...(process.env.NODE_ENV !== "production" && {
@@ -216,7 +211,7 @@ class AuthController {
 
       if (!user || user.refreshToken !== token) {
         return next(
-          new ApiError(401, "Invalid refresh token. Please login again."),
+          new ApiError(401, "Invalid refresh token. Please login again.")
         );
       }
 
@@ -241,10 +236,8 @@ class AuthController {
 
   async logout(req, res, next) {
     try {
-      // Clear refresh token from DB
       await User.findByIdAndUpdate(req.user._id, { refreshToken: null });
 
-      // Clear cookies
       res.clearCookie("accessToken");
       res.clearCookie("refreshToken");
 
@@ -264,14 +257,12 @@ class AuthController {
 
       const user = await User.findOne({ email });
       if (!user) {
-        // We send success even if user not found
         return res.status(200).json({
           success: true,
           message: "If this email exists, a reset link has been sent.",
         });
       }
 
-      // Generate reset token
       const rawToken = crypto.randomBytes(32).toString("hex");
       const hashedToken = crypto
         .createHash("sha256")
