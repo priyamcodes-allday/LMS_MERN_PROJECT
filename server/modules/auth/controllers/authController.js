@@ -11,9 +11,10 @@ const {
 const {
   verifyEmailTemplate,
   resetPasswordTemplate,
+  loginOtpTemplate,
 } = require("../utils/emailTamplates");
 const jwt = require("jsonwebtoken");
-const clientIP=require('../middlewares/clientIP');
+// const clientIP=require('../middlewares/clientIP');
 const getClientIp = require("../middlewares/clientIP");
 
 class AuthController {
@@ -121,8 +122,7 @@ class AuthController {
     }
   }
 
-  // LOGIN
-
+  // LOGIN - STEP 1 (validate credentials, send OTP)
   async login(req, res, next) {
     try {
       const { email, password } = req.body;
@@ -135,7 +135,7 @@ class AuthController {
 
       if (!user.isEmailVerified) {
         return next(
-          new ApiError(401, "Please verify your email before logging in.")
+          new ApiError(401, "Please verify your email before logging in."),
         );
       }
 
@@ -146,17 +146,94 @@ class AuthController {
 
       if (user.role === "teacher" && !user.isApproved) {
         return next(
-          new ApiError(403, "Your teacher account is pending admin approval.")
+          new ApiError(403, "Your teacher account is pending admin approval."),
         );
       }
-      //cientIP
-      user.loginCount+=1
-      user.lastLoginIp=getClientIp(req)
-      user.lastLoginAt=new Date()
+
+      // Resend cooldown: 30 seconds between OTP requests
+      if (
+        user.lastLoginOtpSentAt &&
+        Date.now() - user.lastLoginOtpSentAt.getTime() < 30 * 1000
+      ) {
+        return next(
+          new ApiError(429, "Please wait before requesting another OTP."),
+        );
+      }
+
+      const otp = crypto.randomInt(100000, 999999).toString();
+      const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
+
+      user.loginOtp = hashedOtp;
+      user.loginOtpExpire = Date.now() + 5 * 60 * 1000; // 5 minutes
+      user.loginOtpAttempts = 0;
+      user.lastLoginOtpSentAt = new Date();
+      await user.save();
+
+      await sendEmail({
+        to: user.email,
+        subject: "Your Login OTP - LMS Platform",
+        html: loginOtpTemplate(user.name, otp),
+      });
+
+      res.status(200).json({
+        success: true,
+        message:
+          "OTP sent to your registered email. Please verify to continue login.",
+        email: user.email,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // LOGIN - STEP 2 (verify OTP, issue tokens, track login activity)
+  async verifyLoginOtp(req, res, next) {
+    try {
+      const { email, otp } = req.body;
+
+      const user = await User.findOne({ email });
+
+      if (!user || !user.loginOtp || !user.loginOtpExpire) {
+        return next(
+          new ApiError(400, "No OTP request found. Please login again."),
+        );
+      }
+
+      if (user.loginOtpExpire < Date.now()) {
+        user.loginOtp = undefined;
+        user.loginOtpExpire = undefined;
+        await user.save();
+        return next(new ApiError(400, "OTP has expired. Please login again."));
+      }
+
+      if (user.loginOtpAttempts >= 5) {
+        user.loginOtp = undefined;
+        user.loginOtpExpire = undefined;
+        await user.save();
+        return next(
+          new ApiError(429, "Too many incorrect attempts. Please login again."),
+        );
+      }
+
+      const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
+
+      if (hashedOtp !== user.loginOtp) {
+        user.loginOtpAttempts += 1;
+        await user.save();
+        return next(new ApiError(401, "Invalid OTP."));
+      }
+
+      user.loginOtp = undefined;
+      user.loginOtpExpire = undefined;
+      user.loginOtpAttempts = 0;
+
+      // Track login activity (merged from collaborator's change)
+      user.loginCount += 1;
+      user.lastLoginIp = getClientIp(req);
+      user.lastLoginAt = new Date();
 
       const accessToken = generateAccessToken(user._id, user.role);
       const refreshToken = generateRefreshToken(user._id);
-
       user.refreshToken = refreshToken;
       await user.save();
 
@@ -173,6 +250,7 @@ class AuthController {
         sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
+
       res.status(200).json({
         success: true,
         message: "Logged in successfully.",
@@ -181,14 +259,57 @@ class AuthController {
           name: user.name,
           email: user.email,
           role: user.role,
-          loginCount:user.loginCount,
-          loginIP:user.lastLoginIp
+          loginCount: user.loginCount,
+          loginIP: user.lastLoginIp,
         },
-        // Testing only — tokens are already in HTTP-only cookies, this just lets you see them in Postman
         ...(process.env.NODE_ENV !== "production" && {
           accessToken,
           refreshToken,
         }),
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // RESEND LOGIN OTP
+  async resendLoginOtp(req, res, next) {
+    try {
+      const { email } = req.body;
+
+      const user = await User.findOne({ email });
+      if (!user) {
+        return next(new ApiError(404, "User not found."));
+      }
+
+      if (
+        user.lastLoginOtpSentAt &&
+        Date.now() - user.lastLoginOtpSentAt.getTime() < 30 * 1000
+      ) {
+        return next(
+          new ApiError(429, "Please wait before requesting another OTP."),
+        );
+      }
+
+      const otp = crypto.randomInt(100000, 999999).toString();
+      const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
+
+      user.loginOtp = hashedOtp;
+      user.loginOtpExpire = Date.now() + 5 * 60 * 1000;
+      user.loginOtpAttempts = 0;
+      user.lastLoginOtpSentAt = new Date();
+      await user.save();
+
+      await sendEmail({
+        to: user.email,
+        subject: "Your Login OTP - LMS Platform",
+        html: loginOtpTemplate(user.name, otp),
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "A new OTP has been sent to your email.",
+        ...(process.env.NODE_ENV !== "production" && { otp }),
       });
     } catch (error) {
       next(error);
@@ -211,7 +332,7 @@ class AuthController {
 
       if (!user || user.refreshToken !== token) {
         return next(
-          new ApiError(401, "Invalid refresh token. Please login again.")
+          new ApiError(401, "Invalid refresh token. Please login again."),
         );
       }
 

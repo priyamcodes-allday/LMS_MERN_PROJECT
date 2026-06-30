@@ -47,6 +47,23 @@ const resetPasswordSchema = Joi.object({
   password: passwordRule,
 });
 
+// OTP
+const verifyOtpSchema = Joi.object({
+  email: Joi.string().email().required(),
+  otp: Joi.string()
+    .length(6)
+    .pattern(/^[0-9]+$/)
+    .required()
+    .messages({
+      "string.length": "OTP must be exactly 6 digits",
+      "string.pattern.base": "OTP must contain only numbers",
+    }),
+});
+
+const resendOtpSchema = Joi.object({
+  email: Joi.string().email().required(),
+});
+
 const validate = (schema) => (req, res, next) => {
   const { error } = schema.validate(req.body, { abortEarly: false });
   if (error) {
@@ -56,4 +73,11 @@ const validate = (schema) => (req, res, next) => {
   next();
 };
 
-module.exports = { validate, registerSchema, loginSchema, resetPasswordSchema };
+module.exports = {
+  validate,
+  registerSchema,
+  loginSchema,
+  verifyOtpSchema,
+  resetPasswordSchema,
+  resendOtpSchema,
+};

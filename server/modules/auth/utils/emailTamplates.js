@@ -1,4 +1,3 @@
-
 const verifyEmailTemplate = (name, verifyUrl) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
     <h2>Hello ${name}, verify your email</h2>
@@ -53,6 +52,19 @@ const courseApprovedTemplate = (teacherName, courseName) => `
   </div>
 `;
 
+const loginOtpTemplate = (name, otp) => `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
+    <h2>Login Verification</h2>
+    <p>Hi ${name},</p>
+    <p>Use the following One-Time Password (OTP) to complete your login:</p>
+    <div style="font-size: 28px; font-weight: bold; letter-spacing: 6px; background: #f4f4f4; padding: 16px; text-align: center; border-radius: 6px;">
+      ${otp}
+    </div>
+    <p>This code will expire in <strong>5 minutes</strong>.</p>
+    <p>If you did not attempt to login, please ignore this email or reset your password immediately.</p>
+  </div>
+`;
+
 module.exports = {
   verifyEmailTemplate,
   resetPasswordTemplate,
@@ -60,4 +72,5 @@ module.exports = {
   teacherApprovedTemplate,
   teacherRejectedTemplate,
   courseApprovedTemplate,
+  loginOtpTemplate,
 };

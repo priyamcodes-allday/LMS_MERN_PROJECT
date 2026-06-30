@@ -42,9 +42,10 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpire: Date,
 
     refreshToken: String,
-    loginCount:{
-      type:Number,
-      default:0,
+
+    loginCount: {
+      type: Number,
+      default: 0,
     },
     lastLoginIp: {
       type: String,
@@ -53,6 +54,15 @@ const userSchema = new mongoose.Schema(
     lastLoginAt: {
       type: Date,
     },
+
+    // Login OTP (2-step verification)
+    loginOtp: String,
+    loginOtpExpire: Date,
+    loginOtpAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lastLoginOtpSentAt: Date,
   },
   { timestamps: true },
 );
