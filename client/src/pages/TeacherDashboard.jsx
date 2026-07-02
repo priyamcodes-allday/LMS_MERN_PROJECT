@@ -24,7 +24,14 @@ export default function TeacherDashboard() {
     totalEnrollments: 0
   })
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
 
+    const visibleCourses = myCourses.filter((course) => {
+    const matchesSearch = course.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filterStatus ? course.status === filterStatus : true;
+    return matchesSearch && matchesFilter;
+  });
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -145,32 +152,47 @@ export default function TeacherDashboard() {
         </div>
         {/* My Courses List */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h2 className="text-lg font-bold text-gray-900">My Courses</h2>
-            <a
-              href="#"
-              className="text-sm font-semibold text-[#0c3c2e] hover:text-[#0c3c2e]/80"
-            >
-              View All
-            </a>
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+              <input
+                type="text"
+                placeholder="Search courses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-64 px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e] text-sm"
+              />
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e] text-sm font-semibold text-gray-700 bg-white"
+              >
+                <option value="">All Statuses</option>
+                <option value="draft">Draft</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
           </div>
+
           {isLoading ? (
             <div className="flex justify-center items-center h-40">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0c3c2e]"></div>
             </div>
-          ) : myCourses.length === 0 ? (
+          ) : visibleCourses.length === 0 ? (
             <div className="p-8 text-center">
               <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <h3 className="text-lg font-bold text-gray-900">
-                No courses yet
+                No courses found
               </h3>
               <p className="text-gray-500 mt-1">
-                Your uploaded courses will appear here once they are created.
+                We couldn't find any courses matching your search.
               </p>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">
-              {myCourses.map((course, idx) => (
+              {visibleCourses.map((course, idx) => (
                 <div
                   key={idx}
                   onClick={() => navigate(`/teacher/course/${course._id}`)}

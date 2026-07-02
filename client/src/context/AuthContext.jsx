@@ -72,7 +72,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // LOGIN API
+  // LOGIN API :- request OTP
   const login = async (email, password) => {
     try {
       const res = await api.post("/auth/login", {
@@ -80,38 +80,61 @@ export function AuthProvider({ children }) {
         password,
       });
 
-      const loggedInUser = {
-        id: res.data.user?.id,
-        name: res.data.user?.name || "User",
-        email,
-        role: res.data.user?.role || "user"
-      }
+      return { success: true, message: res.data.message };
 
-      console.log(res.data);
 
-      setUser(loggedInUser);
-      localStorage.setItem("learnable_has_session", "true");
-
-      setIsLoginOpen(false);
-
-      const postLoginRedirect = sessionStorage.getItem("postLoginRedirect");
-      if (postLoginRedirect) {
-        sessionStorage.removeItem("postLoginRedirect");
-        navigate(postLoginRedirect);
-        return;
-      }
-
-      const role = loggedInUser.role;
-      if (role === "admin") navigate("/admin");
-      else if (role === "teacher") navigate("/teacher");
-      else if (role === "student") navigate("/student");
-      else navigate("/");
     } catch (error) {
       console.log(error.response?.data);
-      alert('Invalid email or password: ' + error.response?.data?.message);
+      alert('Login failed: ' + error.response?.data?.message);
+      return { success: false };
     }
   };
 
+
+  //login api :- verify otp
+
+  const verifyOtp = async (email, otp) => {
+    try {
+      const res = await api.post('/auth/login/verify-otp', {
+        email,
+        otp
+      });
+
+      const loggedInUser = {
+        id: res.data.user?.id,
+        name: res.data.user?.name || "User",
+        email: res.data.user?.email || email,
+        role: res.data.user?.role || "user"
+      }
+
+      setUser(loggedInUser);
+      localStorage.setItem("learnable_has_session", "true");
+      setIsLoginOpen(false);
+
+      const postLoginRedirect = sessionStorage.getItem("postLoginRedirect");
+      if(postLoginRedirect) {
+        sessionStorage.removeItem("postLoginRedirect");
+        navigate(postLoginRedirect);
+        return {success: true};
+      }
+
+      const role = loggedInUser.role;
+      if(role === "admin") navigate("/admin");
+      else if (role === "teacher") navigate("/teacher");
+      else if (role === "student") navigate("/student");
+      else navigate("/");
+      return {success: true};
+      
+    } catch (error) {
+      console.log(error.response?.data);
+      alert("Verification failed: " + (error.response?.data?.message || ''));
+      return {success: false};
+      
+    }
+  }
+
+ //logout
+ 
   const logout = async () => {
   try {
     await api.post("/auth/logout");
@@ -151,6 +174,7 @@ export function AuthProvider({ children }) {
         authLoading,
 
         login,
+        verifyOtp,
         signup,
         refreshUser,
 

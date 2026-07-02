@@ -22,14 +22,13 @@ export default function TeacherLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
 
- const navLinks = [
+   const navLinks = [
     { name: "Dashboard", path: "/teacher", icon: HomeIcon },
-    { name: "My Courses", path: "/teacher", icon: BookIcon },
     { name: "Create Course", path: "/teacher/create-course", icon: CalendarIcon },
     { name: "My Students", path: "/teacher/students", icon: UsersIcon },
-    { name: "Earnings", path: "/teacher", icon: ChartIcon },
-    { name: "Settings", path: "/teacher/settings", icon: SettingsIcon },
+    {name: "Settings", path: "/teacher/settings", icon: SettingsIcon}
   ];
+
 
   return (
     <>

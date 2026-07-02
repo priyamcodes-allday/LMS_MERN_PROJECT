@@ -9,7 +9,10 @@ import {
   Trash2,
   Users,
   XCircle,
+  Eye,
+  EyeOff
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import api from "../axios/api";
 
 const roleOptions = ["user", "student", "teacher", "admin"];
@@ -23,6 +26,10 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [actionMessage, setActionMessage] = useState("");
   const [error, setError] = useState("");
+  const [newCategory, setNewCategory] = useState({
+    name: "",
+    description: "",
+  });
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
@@ -159,18 +166,22 @@ export default function AdminDashboard() {
         await api.put(`/admin/teachers/${profileId}/approve`);
         showSuccess("Teacher approved.");
       } else {
-        const reason = prompt("Reason for rejection?") || "Application rejected.";
+        const reason =
+          prompt("Reason for rejection?") || "Application rejected.";
         await api.put(`/admin/teachers/${profileId}/reject`, { reason });
         showSuccess("Teacher rejected.");
       }
       fetchAdminData();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update teacher application.");
+      setError(
+        err.response?.data?.message || "Failed to update teacher application.",
+      );
     }
   };
 
   const handleCourseAction = async (courseId, action) => {
-    if (action === "delete" && !confirm("Permanently delete this course?")) return;
+    if (action === "delete" && !confirm("Permanently delete this course?"))
+      return;
 
     try {
       setError("");
@@ -212,6 +223,21 @@ export default function AdminDashboard() {
       fetchAdminData();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to assign student.");
+    }
+  };
+
+  const handleCreateCategory = async (event) => {
+    event.preventDefault();
+    try {
+      setError("");
+      await api.post("/v1/categories", newCategory);
+      setNewCategory({
+        name: "",
+        description: "",
+      });
+      showSuccess("Category created.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to create category");
     }
   };
 
@@ -282,10 +308,15 @@ export default function AdminDashboard() {
           const Icon = stat.icon;
 
           return (
-            <div key={stat.title} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+            <div
+              key={stat.title}
+              className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm"
+            >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm font-bold text-gray-500">{stat.title}</p>
+                  <p className="text-sm font-bold text-gray-500">
+                    {stat.title}
+                  </p>
                   <h2 className="text-3xl font-black text-gray-900 mt-2">
                     {stat.value}
                   </h2>
@@ -294,7 +325,9 @@ export default function AdminDashboard() {
                   <Icon className="w-5 h-5" />
                 </div>
               </div>
-              <p className="text-xs font-semibold text-gray-500 mt-4">{stat.detail}</p>
+              <p className="text-xs font-semibold text-gray-500 mt-4">
+                {stat.detail}
+              </p>
             </div>
           );
         })}
@@ -304,14 +337,18 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-gray-100">
             <h2 className="text-lg font-black text-gray-900">Create User</h2>
-            <p className="text-sm text-gray-500 mt-1">Admin-created users skip email verification.</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Admin-created users skip email verification.
+            </p>
           </div>
           <form onSubmit={handleCreateUser} className="p-5 space-y-4">
             <input
               type="text"
               required
               value={newUser.name}
-              onChange={(event) => setNewUser({ ...newUser, name: event.target.value })}
+              onChange={(event) =>
+                setNewUser({ ...newUser, name: event.target.value })
+              }
               placeholder="Full name"
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e]"
             />
@@ -319,7 +356,9 @@ export default function AdminDashboard() {
               type="email"
               required
               value={newUser.email}
-              onChange={(event) => setNewUser({ ...newUser, email: event.target.value })}
+              onChange={(event) =>
+                setNewUser({ ...newUser, email: event.target.value })
+              }
               placeholder="Email address"
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e]"
             />
@@ -328,13 +367,17 @@ export default function AdminDashboard() {
               required
               minLength="8"
               value={newUser.password}
-              onChange={(event) => setNewUser({ ...newUser, password: event.target.value })}
+              onChange={(event) =>
+                setNewUser({ ...newUser, password: event.target.value })
+              }
               placeholder="Temporary password"
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e]"
             />
             <select
               value={newUser.role}
-              onChange={(event) => setNewUser({ ...newUser, role: event.target.value })}
+              onChange={(event) =>
+                setNewUser({ ...newUser, role: event.target.value })
+              }
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e]"
             >
               {roleOptions.map((role) => (
@@ -355,8 +398,12 @@ export default function AdminDashboard() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-gray-100">
-            <h2 className="text-lg font-black text-gray-900">User Management</h2>
-            <p className="text-sm text-gray-500 mt-1">Change roles or remove accounts.</p>
+            <h2 className="text-lg font-black text-gray-900">
+              User Management
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Change roles or remove accounts.
+            </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -378,7 +425,9 @@ export default function AdminDashboard() {
                     <td className="px-5 py-4">
                       <select
                         value={user.role}
-                        onChange={(event) => handleRoleChange(user._id, event.target.value)}
+                        onChange={(event) =>
+                          handleRoleChange(user._id, event.target.value)
+                        }
                         className="px-3 py-2 rounded-lg border border-gray-200 bg-white font-bold"
                       >
                         {roleOptions.map((role) => (
@@ -389,11 +438,13 @@ export default function AdminDashboard() {
                       </select>
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-black ${
-                        user.isEmailVerified
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-amber-50 text-amber-700"
-                      }`}>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-black ${
+                          user.isEmailVerified
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-amber-50 text-amber-700"
+                        }`}
+                      >
                         {user.isEmailVerified ? "Verified" : "Pending"}
                       </span>
                     </td>
@@ -417,8 +468,12 @@ export default function AdminDashboard() {
       <section className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-5 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-black text-gray-900">Course Management</h2>
-            <p className="text-sm text-gray-500 mt-1">Approve, reject, hide, or delete courses.</p>
+            <h2 className="text-lg font-black text-gray-900">
+              Course Management
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Approve, reject, hide, or delete courses.
+            </p>
           </div>
           <select
             value={courseFilter}
@@ -434,41 +489,59 @@ export default function AdminDashboard() {
         </div>
         <div className="divide-y divide-gray-100">
           {visibleCourses.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No courses found.</div>
+            <div className="p-8 text-center text-gray-500">
+              No courses found.
+            </div>
           ) : (
             visibleCourses.map((course) => (
-              <div key={course._id} className="p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+              <div
+                key={course._id}
+                className="p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4"
+              >
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">
                     <BookOpen className="w-6 h-6" />
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-black text-gray-900">{course.title}</h3>
+                      <h3 className="font-black text-gray-900">
+                        {course.title}
+                      </h3>
                       <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-black capitalize">
                         {course.status}
                       </span>
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-black ${
-                        course.isActive
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-red-50 text-red-700"
-                      }`}>
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-black ${
+                          course.isActive
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-red-50 text-red-700"
+                        }`}
+                      >
                         {course.isActive ? "Active" : "Hidden"}
                       </span>
                     </div>
                     <p className="text-sm text-gray-500 mt-1">
-                      By {course.teacher?.name || "Unknown"} | {course.lessonCount || 0} lessons | ${course.price || 0}
+                      By {course.teacher?.name || "Unknown"} |{" "}
+                      {course.lessonCount || 0} lessons | ${course.price || 0}
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => handleCourseAction(course._id, "approve")}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100"
+                <div className="flex flex-col xl:flex-row gap-2 mt-4 xl:mt-0">
+                  <Link
+                    to={`/admin/course/${course._id}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#0c3c2e] text-white font-bold hover:bg-[#0c3c2e]/90"
                   >
-                    <CheckCircle className="w-4 h-4" />
-                    Approve
-                  </button>
+                    View Details
+                  </Link>
+                  {course.status !== "approved" && (
+                    <button
+                      onClick={() => handleCourseAction(course._id, "approve")}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Approve
+                    </button>
+                  )}
                   <button
                     onClick={() => handleCourseAction(course._id, "reject")}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-50 text-amber-700 font-bold hover:bg-amber-100"
@@ -478,9 +551,21 @@ export default function AdminDashboard() {
                   </button>
                   <button
                     onClick={() => handleCourseAction(course._id, "toggle")}
-                    className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 font-bold hover:bg-gray-200"
+                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold transition-colors ${
+                      course.isActive
+                        ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                    }`}
                   >
-                    {course.isActive ? "Hide" : "Show"}
+                    {course.isActive ? (
+                      <>
+                        <EyeOff className="w-4 h-4" /> Hide
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-4 h-4" /> Show
+                      </>
+                    )}
                   </button>
                   <button
                     onClick={() => handleCourseAction(course._id, "delete")}
@@ -499,30 +584,45 @@ export default function AdminDashboard() {
       <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-gray-100">
-            <h2 className="text-lg font-black text-gray-900">Pending Teacher Applications</h2>
+            <h2 className="text-lg font-black text-gray-900">
+              Pending Teacher Applications
+            </h2>
           </div>
           <div className="divide-y divide-gray-100">
             {pendingTeachers.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">No pending teacher applications.</div>
+              <div className="p-8 text-center text-gray-500">
+                No pending teacher applications.
+              </div>
             ) : (
               pendingTeachers.map((profile) => (
-                <div key={profile._id} className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div
+                  key={profile._id}
+                  className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                >
                   <div>
-                    <h3 className="font-black text-gray-900">{profile.user?.name}</h3>
-                    <p className="text-sm text-gray-500">{profile.user?.email}</p>
+                    <h3 className="font-black text-gray-900">
+                      {profile.user?.name}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {profile.user?.email}
+                    </p>
                     <p className="text-sm text-gray-500 mt-1">
                       {profile.specialization} | {profile.experience} yrs
                     </p>
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleTeacherDecision(profile._id, "approve")}
+                      onClick={() =>
+                        handleTeacherDecision(profile._id, "approve")
+                      }
                       className="px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100"
                     >
                       Approve
                     </button>
                     <button
-                      onClick={() => handleTeacherDecision(profile._id, "reject")}
+                      onClick={() =>
+                        handleTeacherDecision(profile._id, "reject")
+                      }
                       className="px-3 py-2 rounded-lg bg-red-50 text-red-700 font-bold hover:bg-red-100"
                     >
                       Reject
@@ -536,14 +636,20 @@ export default function AdminDashboard() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-gray-100">
-            <h2 className="text-lg font-black text-gray-900">Assign Student to Course</h2>
-            <p className="text-sm text-gray-500 mt-1">Uses the server admin assignment route.</p>
+            <h2 className="text-lg font-black text-gray-900">
+              Assign Student to Course
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Uses the server admin assignment route.
+            </p>
           </div>
           <form onSubmit={handleAssignStudent} className="p-5 space-y-4">
             <select
               required
               value={assignment.studentId}
-              onChange={(event) => setAssignment({ ...assignment, studentId: event.target.value })}
+              onChange={(event) =>
+                setAssignment({ ...assignment, studentId: event.target.value })
+              }
               className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white font-bold"
             >
               <option value="">Select student</option>
@@ -556,7 +662,9 @@ export default function AdminDashboard() {
             <select
               required
               value={assignment.courseId}
-              onChange={(event) => setAssignment({ ...assignment, courseId: event.target.value })}
+              onChange={(event) =>
+                setAssignment({ ...assignment, courseId: event.target.value })
+              }
               className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white font-bold"
             >
               <option value="">Select course</option>
@@ -571,6 +679,51 @@ export default function AdminDashboard() {
               className="w-full bg-[#0c3c2e] text-white px-4 py-3 rounded-xl font-black hover:bg-[#0c3c2e]/90 transition-colors"
             >
               Assign Student
+            </button>
+          </form>
+        </div>
+      </section>
+      {/* Create Category Section */}
+      <section className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-gray-100">
+            <h2 className="text-lg font-black text-gray-900">
+              Create Category
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Add a new course category to the platform.
+            </p>
+          </div>
+          <form onSubmit={handleCreateCategory} className="p-5 space-y-4">
+            <input
+              type="text"
+              required
+              value={newCategory.name}
+              onChange={(event) =>
+                setNewCategory({ ...newCategory, name: event.target.value })
+              }
+              placeholder="Category Name (e.g. Web Development)"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e]"
+            />
+            <textarea
+              required
+              value={newCategory.description}
+              onChange={(event) =>
+                setNewCategory({
+                  ...newCategory,
+                  description: event.target.value,
+                })
+              }
+              placeholder="Category Description"
+              rows="3"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e] resize-none"
+            />
+            <button
+              type="submit"
+              className="w-full inline-flex items-center justify-center gap-2 bg-[#0c3c2e] text-white px-4 py-3 rounded-xl font-black hover:bg-[#0c3c2e]/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create Category
             </button>
           </form>
         </div>

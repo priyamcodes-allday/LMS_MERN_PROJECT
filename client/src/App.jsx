@@ -4,7 +4,7 @@ import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import DashboardLayout from "./layouts/DashboardLayout";
 import RoleRoute from "./components/routing/RoleRoute";
-import TeacherLayout from "./layouts/TeacherLayout"
+import TeacherLayout from "./layouts/TeacherLayout";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -18,6 +18,10 @@ import StudentCart from "./pages/StudentCart";
 import StudentWishlist from "./pages/StudentWishlist";
 import StudentCoursePlayer from "./pages/StudentCoursePlayer";
 import { LoginModal, SignUpModal } from "./components/AuthModals";
+import Settings from "./pages/Settings";
+import ForgotPassword from "./pages/ForgetPassword";
+import ResetPassword from "./pages/ResetPassword";
+import AdminCourseDetail from "./pages/AdminCourseDetail";
 
 function App() {
   return (
@@ -28,7 +32,6 @@ function App() {
         <Route path="/verify-email/:token" element={<VerifyEmail />} />
         <Route path="/become-instructor" element={<TeacherSignup />} />
 
-
         {/* STUDENT ROUTES */}
         <Route element={<RoleRoute allowedRoles={["student"]} />}>
           <Route path="/student" element={<DashboardLayout />}>
@@ -36,38 +39,34 @@ function App() {
             <Route path="cart" element={<StudentCart />} />
             <Route path="wishlist" element={<StudentWishlist />} />
             <Route path="course/:id" element={<StudentCoursePlayer />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
         </Route>
 
         {/* TEACHER ROUTES */}
         <Route element={<RoleRoute allowedRoles={["teacher"]} />}>
-         
           <Route path="/teacher" element={<TeacherLayout />}>
-            <Route
-              index
-              element={
-                <TeacherDashboard/>
-              }
-            />
+            <Route index element={<TeacherDashboard />} />
             <Route path="create-course" element={<CreateCourse />} />
             <Route path="course/:id" element={<ManageCourse />} />
             <Route path="students" element={<TeacherStudents />} />
-
+            <Route path="settings" element={<Settings />} />
           </Route>
-
         </Route>
 
         {/* ADMIN ROUTES */}
-        <Route element={<RoleRoute allowedRoles={['admin']}/>}>
-        <Route path="/admin" element={<AdminLayout/>}>
-          <Route index element={<AdminDashboard/>} />
+        <Route element={<RoleRoute allowedRoles={["admin"]} />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="course/:id" element={<AdminCourseDetail />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
         </Route>
-        </Route>
 
-
-
-        
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
       </Routes>
+
       <LoginModal />
       <SignUpModal />
     </>
