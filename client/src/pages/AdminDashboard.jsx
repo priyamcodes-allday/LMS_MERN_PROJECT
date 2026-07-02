@@ -10,7 +10,11 @@ import {
   Users,
   XCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  Edit3,
+  Save,
+  X,
+  Tag
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import api from "../axios/api";
@@ -26,10 +30,10 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [actionMessage, setActionMessage] = useState("");
   const [error, setError] = useState("");
-  const [newCategory, setNewCategory] = useState({
-    name: "",
-    description: "",
-  });
+  const [newCategory, setNewCategory] = useState({ name: "", description: "" });
+  const [categories, setCategories] = useState([]);
+  const [editingCategory, setEditingCategory] = useState(null); // { _id, name, description }
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
@@ -61,19 +65,19 @@ export default function AdminDashboard() {
       setIsLoading(true);
       setError("");
 
-      const [statsRes, usersRes, coursesRes, teachersRes] = await Promise.all([
+      const [statsRes, usersRes, coursesRes, teachersRes, categoriesRes] = await Promise.all([
         api.get("/admin/dashboard"),
         api.get("/admin/users"),
         api.get("/admin/courses"),
         api.get("/admin/teachers/pending"),
+        api.get("/v1/categories"),
       ]);
 
       if (statsRes.data?.success) setDashboardStats(statsRes.data.stats);
       if (usersRes.data?.success) setUsers(usersRes.data.users || []);
       if (coursesRes.data?.success) setCourses(coursesRes.data.courses || []);
-      if (teachersRes.data?.success) {
-        setPendingTeachers(teachersRes.data.profiles || []);
-      }
+      if (teachersRes.data?.success) setPendingTeachers(teachersRes.data.profiles || []);
+      if (categoriesRes.data?.success) setCategories(categoriesRes.data.data || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load admin data.");
     } finally {
@@ -231,13 +235,41 @@ export default function AdminDashboard() {
     try {
       setError("");
       await api.post("/v1/categories", newCategory);
-      setNewCategory({
-        name: "",
-        description: "",
-      });
+      setNewCategory({ name: "", description: "" });
       showSuccess("Category created.");
+      fetchAdminData();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create category");
+    }
+  };
+
+  const handleUpdateCategory = async (id) => {
+    setIsSavingCategory(true);
+    try {
+      setError("");
+      await api.put(`/v1/categories/${id}`, {
+        name: editingCategory.name,
+        description: editingCategory.description,
+      });
+      setEditingCategory(null);
+      showSuccess("Category updated.");
+      fetchAdminData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update category.");
+    } finally {
+      setIsSavingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = async (id) => {
+    if (!confirm("Deactivate this category?")) return;
+    try {
+      setError("");
+      await api.delete(`/v1/categories/${id}`);
+      showSuccess("Category deactivated.");
+      fetchAdminData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to delete category.");
     }
   };
 
@@ -683,37 +715,27 @@ export default function AdminDashboard() {
           </form>
         </div>
       </section>
-      {/* Create Category Section */}
+      {/* Category CRUD Section */}
       <section className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+        {/* Create Category */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-gray-100">
-            <h2 className="text-lg font-black text-gray-900">
-              Create Category
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Add a new course category to the platform.
-            </p>
+            <h2 className="text-lg font-black text-gray-900">Create Category</h2>
+            <p className="text-sm text-gray-500 mt-1">Add a new course category to the platform.</p>
           </div>
           <form onSubmit={handleCreateCategory} className="p-5 space-y-4">
             <input
               type="text"
               required
               value={newCategory.name}
-              onChange={(event) =>
-                setNewCategory({ ...newCategory, name: event.target.value })
-              }
+              onChange={(event) => setNewCategory({ ...newCategory, name: event.target.value })}
               placeholder="Category Name (e.g. Web Development)"
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e]"
             />
             <textarea
               required
               value={newCategory.description}
-              onChange={(event) =>
-                setNewCategory({
-                  ...newCategory,
-                  description: event.target.value,
-                })
-              }
+              onChange={(event) => setNewCategory({ ...newCategory, description: event.target.value })}
               placeholder="Category Description"
               rows="3"
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e] resize-none"
@@ -726,6 +748,85 @@ export default function AdminDashboard() {
               Create Category
             </button>
           </form>
+        </div>
+
+        {/* Categories List */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-gray-100 flex items-center gap-3">
+            <Tag className="w-5 h-5 text-[#0c3c2e]" />
+            <div>
+              <h2 className="text-lg font-black text-gray-900">Manage Categories</h2>
+              <p className="text-sm text-gray-500 mt-0.5">{categories.length} active categories</p>
+            </div>
+          </div>
+          <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+            {categories.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">No categories yet.</div>
+            ) : (
+              categories.map((cat) => (
+                <div key={cat._id} className="p-4">
+                  {editingCategory?._id === cat._id ? (
+                    // --- Inline Edit Form ---
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={editingCategory.name}
+                        onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e] text-sm"
+                      />
+                      <textarea
+                        rows="2"
+                        value={editingCategory.description}
+                        onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0c3c2e] text-sm resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleUpdateCategory(cat._id)}
+                          disabled={isSavingCategory}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#0c3c2e] text-white font-bold text-sm hover:bg-[#0c3c2e]/90 disabled:opacity-50"
+                        >
+                          <Save className="w-3.5 h-3.5" />
+                          {isSavingCategory ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          onClick={() => setEditingCategory(null)}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 font-bold text-sm hover:bg-gray-200"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // --- Display Row ---
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-black text-gray-900 truncate">{cat.name}</p>
+                        <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{cat.description}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button
+                          onClick={() => setEditingCategory({ _id: cat._id, name: cat.name, description: cat.description })}
+                          className="p-2 text-gray-500 hover:text-[#0c3c2e] hover:bg-[#0c3c2e]/10 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCategory(cat._id)}
+                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Deactivate"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </section>
     </div>
