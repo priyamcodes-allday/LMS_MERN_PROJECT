@@ -93,8 +93,9 @@ export default function AdminDashboard() {
       api.get("/admin/users"),
       api.get("/admin/courses"),
       api.get("/admin/teachers/pending"),
+      api.get("/v1/categories"),
     ])
-      .then(([statsRes, usersRes, coursesRes, teachersRes]) => {
+      .then(([statsRes, usersRes, coursesRes, teachersRes, categoriesRes]) => {
         if (!isActive) return;
 
         if (statsRes.data?.success) setDashboardStats(statsRes.data.stats);
@@ -103,6 +104,7 @@ export default function AdminDashboard() {
         if (teachersRes.data?.success) {
           setPendingTeachers(teachersRes.data.profiles || []);
         }
+        if (categoriesRes.data?.success) setCategories(categoriesRes.data.data || []);
       })
       .catch((err) => {
         if (isActive) {
